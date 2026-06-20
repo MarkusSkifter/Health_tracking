@@ -1,4 +1,4 @@
-import type { IsoDate } from "@health/shared";
+﻿import type { IsoDate } from "@health/shared";
 import { and, between, eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { activities, dailySummary, wellness } from "../db/schema";
@@ -60,6 +60,32 @@ export async function generateDailySummary(
     );
 
   const metrics = computeLoadMetrics(acts, date);
+
+  // Always write metrics immediately — Claude failure must not block load numbers.
+  const metricsRow = {
+    userId,
+    date,
+    trainingLoadDaily: metrics.trainingLoadDaily,
+    load7d: metrics.load7d,
+    load28d: metrics.load28d,
+    acuteChronicRatio: metrics.acuteChronicRatio,
+    aiSummaryText: existing?.aiSummaryText ?? "",
+  };
+
+  await db
+    .insert(dailySummary)
+    .values(metricsRow)
+    .onConflictDoUpdate({
+      target: [dailySummary.userId, dailySummary.date],
+      set: {
+        trainingLoadDaily: metricsRow.trainingLoadDaily,
+        load7d: metricsRow.load7d,
+        load28d: metricsRow.load28d,
+        acuteChronicRatio: metricsRow.acuteChronicRatio,
+      },
+    });
+
+  // Now try to generate AI text — failure here leaves metrics intact.
   const upcoming = await fetchUpcomingWorkouts(7).catch(() => []);
   const userPrompt = buildSummaryUserPrompt({
     date,
@@ -70,29 +96,10 @@ export async function generateDailySummary(
   });
   const aiSummaryText = await generateSummaryText(userPrompt);
 
-  const row = {
-    userId,
-    date,
-    trainingLoadDaily: metrics.trainingLoadDaily,
-    load7d: metrics.load7d,
-    load28d: metrics.load28d,
-    acuteChronicRatio: metrics.acuteChronicRatio,
-    aiSummaryText,
-  };
-
   await db
-    .insert(dailySummary)
-    .values(row)
-    .onConflictDoUpdate({
-      target: [dailySummary.userId, dailySummary.date],
-      set: {
-        trainingLoadDaily: row.trainingLoadDaily,
-        load7d: row.load7d,
-        load28d: row.load28d,
-        acuteChronicRatio: row.acuteChronicRatio,
-        aiSummaryText: row.aiSummaryText,
-      },
-    });
+    .update(dailySummary)
+    .set({ aiSummaryText })
+    .where(and(eq(dailySummary.userId, userId), eq(dailySummary.date, date)));
 
   return { date, aiSummaryText, skipped: false };
 }
