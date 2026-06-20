@@ -28,8 +28,8 @@ export default async function TodayPage() {
   } catch {
     return (
       <EmptyState
-        title=”Cannot reach the server”
-        message=”The API is not responding. Start it with pnpm dev:api.”
+        title="Cannot reach the server"
+        message="The API is not responding. Start it with pnpm dev:api."
       />
     );
   }
