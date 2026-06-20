@@ -1,6 +1,9 @@
+import type { AiDaySuggestion } from "@health/shared";
 import type { FastifyInstance } from "fastify";
 import { ingestWindow } from "../ingest/ingest";
+import { IntervalsClient } from "../intervals/client";
 import { fetchUpcomingWorkouts } from "../intervals/upcoming";
+import { intervalsEnv } from "../env";
 import { getActivities, getAnalytics, getHistory, getToday } from "../summary/queries";
 import { generateWeekSuggestions } from "../summary/suggestions";
 
@@ -54,6 +57,26 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
     } catch (err) {
       app.log.error(err, "Failed to fetch upcoming workouts");
       return reply.code(500).send({ error: "Failed to fetch upcoming workouts" });
+    }
+  });
+
+  app.post<{ Body: AiDaySuggestion }>("/api/calendar/event", async (req, reply) => {
+    try {
+      const day = req.body;
+      const { INTERVALS_API_KEY, INTERVALS_ATHLETE_ID } = intervalsEnv();
+      const client = new IntervalsClient({ apiKey: INTERVALS_API_KEY, athleteId: INTERVALS_ATHLETE_ID });
+      await client.createEvent({
+        start_date_local: day.date + "T08:00:00",
+        name: day.name,
+        type: day.type && day.type !== "Rest" ? day.type : undefined,
+        moving_time: day.plannedDurationSec ?? undefined,
+        icu_training_load: day.plannedLoad > 0 ? day.plannedLoad : undefined,
+        description: day.rationale,
+      });
+      return { ok: true };
+    } catch (err) {
+      app.log.error(err, "Failed to create calendar event");
+      return reply.code(500).send({ error: "Failed to create event" });
     }
   });
 }

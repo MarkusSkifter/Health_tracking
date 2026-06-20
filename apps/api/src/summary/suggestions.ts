@@ -1,4 +1,4 @@
-import type { AiWeekPlan } from "@health/shared";
+import type { AiDaySuggestion, AiWeekPlan } from "@health/shared";
 import { SUMMARY_MODEL } from "@health/shared";
 import Anthropic from "@anthropic-ai/sdk";
 import { and, between, desc, eq } from "drizzle-orm";
@@ -14,10 +14,54 @@ function addDays(date: string, n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-export async function generateWeekSuggestions(): Promise<AiWeekPlan | null> {
+function fallbackPlan(today: string, tsb: number, acr: number): AiWeekPlan {
+  const dates = Array.from({ length: 7 }, (_, i) => addDays(today, i));
+  const fatigued = tsb < -15 || acr > 1.3;
+
+  type Template = { name: string; type: string; dur: number | null; load: number; rationale: string };
+
+  const templates: Template[] = fatigued
+    ? [
+        { name: "Easy run", type: "Run", dur: 1800, load: 25, rationale: "Light aerobic work to aid recovery." },
+        { name: "Rest", type: "Rest", dur: null, load: 0, rationale: "Full rest to absorb recent training." },
+        { name: "Easy ride", type: "Ride", dur: 3600, load: 35, rationale: "Low-intensity aerobic maintenance." },
+        { name: "Rest", type: "Rest", dur: null, load: 0, rationale: "Recovery is the priority this week." },
+        { name: "Easy run", type: "Run", dur: 2700, load: 30, rationale: "Keep legs moving without adding stress." },
+        { name: "Rest", type: "Rest", dur: null, load: 0, rationale: "Build freshness ahead of the weekend." },
+        { name: "Long easy ride", type: "Ride", dur: 5400, load: 50, rationale: "Aerobic base work with fresh legs." },
+      ]
+    : [
+        { name: "Easy run", type: "Run", dur: 2700, load: 35, rationale: "Aerobic base to start the week." },
+        { name: "Threshold intervals", type: "Ride", dur: 3600, load: 80, rationale: "Quality work while legs are fresh." },
+        { name: "Rest", type: "Rest", dur: null, load: 0, rationale: "Recovery between hard sessions." },
+        { name: "Easy ride", type: "Ride", dur: 3600, load: 40, rationale: "Keep aerobic adaptation ticking over." },
+        { name: "Tempo run", type: "Run", dur: 3000, load: 70, rationale: "Second quality session of the week." },
+        { name: "Recovery ride", type: "Ride", dur: 2700, load: 30, rationale: "Flush legs after the hard run." },
+        { name: "Long ride", type: "Ride", dur: 7200, load: 90, rationale: "Weekend endurance effort." },
+      ];
+
+  return {
+    overview: fatigued
+      ? "You are carrying significant fatigue this week. The plan prioritises recovery with easy sessions and rest days."
+      : "Balanced week with two quality sessions and adequate recovery to build fitness steadily.",
+    days: dates.map((date, i) => ({
+      date,
+      name: templates[i].name,
+      type: templates[i].type,
+      plannedDurationSec: templates[i].dur,
+      plannedLoad: templates[i].load,
+      rationale: templates[i].rationale,
+    })),
+  };
+}
+
+export async function generateWeekSuggestions(): Promise<AiWeekPlan> {
+  const today = isoDateInTimeZone(new Date(), ATHLETE_TIMEZONE);
+  let tsb = 0;
+  let acr = 1.0;
+
   try {
     const userId = await getOrCreateUserId();
-    const today = isoDateInTimeZone(new Date(), ATHLETE_TIMEZONE);
 
     const [latestRows, recentWellness, recentActs] = await Promise.all([
       db.select().from(dailySummary)
@@ -33,7 +77,10 @@ export async function generateWeekSuggestions(): Promise<AiWeekPlan | null> {
     ]);
 
     const s = latestRows[0];
-    if (!s) return null;
+    if (s) {
+      tsb = Math.round(s.load7d - s.load28d);
+      acr = s.acuteChronicRatio;
+    }
 
     const dates = Array.from({ length: 7 }, (_, i) => addDays(today, i));
 
@@ -48,37 +95,28 @@ export async function generateWeekSuggestions(): Promise<AiWeekPlan | null> {
       .map((a) => `${a.date}: ${a.type} load=${Math.round(a.trainingLoad ?? 0)}`)
       .join(", ");
 
-    const tsb = Math.round(s.load7d - s.load28d);
     const state =
       tsb > 10 ? "fresh/rested" :
       tsb > -10 ? "balanced" :
       tsb > -20 ? "slightly fatigued" : "fatigued";
 
     const systemPrompt =
-      "You are an expert endurance coach. Return ONLY valid JSON with no markdown, " +
-      "no explanation, no code fences. The JSON must match the requested schema exactly.";
+      "You are an expert endurance coach. Return ONLY valid JSON — no markdown, no code fences, no explanation.";
 
     const userPrompt =
-      "Generate a 7-day training plan for this athlete.\n\n" +
-      "Fitness snapshot (as of " + s.date + "):\n" +
-      "- CTL (chronic load/fitness): " + Math.round(s.load28d) + "\n" +
-      "- ATL (acute load/fatigue): " + Math.round(s.load7d) + "\n" +
-      "- TSB (form): " + tsb + " -> athlete is " + state + "\n" +
-      "- ACR: " + s.acuteChronicRatio.toFixed(2) + "\n" +
-      (hrvLines ? "- HRV trend (recent): " + hrvLines + "\n" : "") +
-      (actLines ? "- Recent sessions: " + actLines + "\n" : "") +
-      "\nPlan these 7 dates: " + dates.join(", ") + "\n\n" +
-      "Return this JSON schema:\n" +
-      '{"overview":"string","days":[{"date":"YYYY-MM-DD","name":"string",' +
-      '"type":"Run|Ride|Swim|WeightTraining|Rest","plannedDurationSec":3600,' +
-      '"plannedLoad":65,"rationale":"string"}]}\n\n' +
-      "Rules:\n" +
-      "- Rest days: type=Rest, plannedDurationSec=null, plannedLoad=0\n" +
-      "- If fatigued or ACR>1.3 prioritise easy/rest days\n" +
-      "- Alternate hard and easy days\n" +
-      "- plannedLoad: rest=0, easy=20-45, moderate=45-70, hard=70-120\n" +
-      "- plannedDurationSec in seconds; null for rest days\n" +
-      "- rationale: one short sentence per day";
+      "Generate a 7-day training plan.\n\n" +
+      (s ? (
+        "Fitness (as of " + s.date + "): CTL=" + Math.round(s.load28d) +
+        " ATL=" + Math.round(s.load7d) +
+        " TSB=" + tsb + " (" + state + ")" +
+        " ACR=" + s.acuteChronicRatio.toFixed(2) + "\n"
+      ) : "") +
+      (hrvLines ? "HRV trend: " + hrvLines + "\n" : "") +
+      (actLines ? "Recent sessions: " + actLines + "\n" : "") +
+      "\nDates: " + dates.join(", ") + "\n\n" +
+      "Schema: {\"overview\":\"...\",\"days\":[{\"date\":\"YYYY-MM-DD\",\"name\":\"...\",\"type\":\"Run|Ride|Swim|WeightTraining|Rest\",\"plannedDurationSec\":3600,\"plannedLoad\":65,\"rationale\":\"...\"}]}\n\n" +
+      "Rules: Rest => plannedDurationSec=null plannedLoad=0. Alternate hard/easy. " +
+      "Easy load 20-45, moderate 45-70, hard 70-120. If fatigued or ACR>1.3 prioritise rest.";
 
     const { ANTHROPIC_API_KEY } = anthropicEnv();
     const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
@@ -95,10 +133,13 @@ export async function generateWeekSuggestions(): Promise<AiWeekPlan | null> {
       .trim();
 
     const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) return null;
-
-    return JSON.parse(match[0]) as AiWeekPlan;
+    if (match) {
+      const parsed = JSON.parse(match[0]) as AiWeekPlan;
+      if (parsed.days?.length) return parsed;
+    }
   } catch {
-    return null;
+    // Fall through to rule-based fallback
   }
+
+  return fallbackPlan(today, tsb, acr);
 }
