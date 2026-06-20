@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { Activity, AnalyticsDay } from "@health/shared";
 import { Fragment, useRef, useState } from "react";
@@ -32,6 +32,7 @@ function formatDistance(meters: number | null): string {
 }
 
 function formatActivityType(type: string): string {
+  if (type === "Unknown") return "Workout";
   return type.replace(/([A-Z])/g, " $1").trim();
 }
 
@@ -160,11 +161,14 @@ export function AnalyticsDailyTable({
             const dayActivities = byDate[d.date] ?? [];
             const hasActivities = dayActivities.length > 0;
             const isExpanded = expanded.has(d.date);
+            const activityLoad = dayActivities.reduce((sum, a) => sum + (a.trainingLoad ?? 0), 0);
+            // Fall back to summing activities when the stored summary load is 0 but activities exist.
             const effectiveLoad =
-              d.trainingLoadDaily ??
-              (dayActivities.length > 0
-                ? dayActivities.reduce((sum, a) => sum + (a.trainingLoad ?? 0), 0)
-                : null);
+              d.trainingLoadDaily != null && (d.trainingLoadDaily > 0 || dayActivities.length === 0)
+                ? d.trainingLoadDaily
+                : dayActivities.length > 0
+                  ? activityLoad
+                  : null;
 
             return (
               <Fragment key={d.date}>

@@ -103,4 +103,4 @@ export interface PlannedWorkout {
 }
 
 /** Claude model used for the daily summary (SPEC §7). */
-export const SUMMARY_MODEL = "claude-sonnet-4-6" as const;
+export const SUMMARY_MODEL = "claude-haiku-4-5-20251001" as const;
