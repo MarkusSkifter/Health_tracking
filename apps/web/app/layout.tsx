@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import { BottomNav } from "./components/BottomNav";
 import { ServiceWorkerRegister } from "./components/ServiceWorkerRegister";
+import { SideNav } from "./components/SideNav";
 
 export const metadata: Metadata = {
   title: "Training Insights",
@@ -27,7 +28,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className="bg-white text-neutral-900">
-        <div className="mx-auto min-h-dvh max-w-md px-5 pt-8 pb-24">{children}</div>
+        <SideNav />
+        <div className="md:pl-56">
+          <div className="mx-auto max-w-5xl px-5 pt-8 pb-24 md:px-10 md:pt-10 md:pb-10">
+            {children}
+          </div>
+        </div>
         <BottomNav />
         <ServiceWorkerRegister />
       </body>

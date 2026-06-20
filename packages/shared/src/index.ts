@@ -50,8 +50,30 @@ export interface DailySummary extends LoadMetrics {
 /** Payload for the frontend "today" screen (SPEC §8). */
 export interface TodayResponse {
   summary: DailySummary;
+  /** Wellness for the same date as the latest summary (null if not synced). */
+  wellness: Wellness | null;
   /** Recent daily load for the trend sparkline. */
   trend: Array<{ date: IsoDate; trainingLoadDaily: number }>;
+}
+
+/** One day of merged load + wellness data for the analytics view. */
+export interface AnalyticsDay {
+  date: IsoDate;
+  trainingLoadDaily: number | null;
+  load7d: number | null;
+  load28d: number | null;
+  acuteChronicRatio: number | null;
+  hrv: number | null;
+  restingHr: number | null;
+  sleepSec: number | null;
+  steps: number | null;
+  weightKg: number | null;
+}
+
+export interface AnalyticsResponse {
+  days: AnalyticsDay[];
+  from: IsoDate;
+  to: IsoDate;
 }
 
 /** Claude model used for the daily summary (SPEC §7). */
