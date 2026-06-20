@@ -71,4 +71,32 @@ export class IntervalsClient {
       newest,
     });
   }
+
+  /** Create a calendar event (planned workout). */
+  async createEvent(event: {
+    start_date_local: string;
+    name: string;
+    type?: string;
+    moving_time?: number | null;
+    icu_training_load?: number;
+    description?: string;
+  }): Promise<unknown> {
+    const url = new URL(`${this.baseUrl}/api/v1/athlete/${this.athleteId}/events`);
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: this.authHeader,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(event),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(
+        `intervals.icu ${res.status} ${res.statusText}` + (body ? `: ${body.slice(0, 300)}` : ""),
+      );
+    }
+    return res.json();
+  }
 }

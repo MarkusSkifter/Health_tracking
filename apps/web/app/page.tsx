@@ -1,5 +1,6 @@
 import type { AiDaySuggestion, AiWeekPlan, PlannedWorkout, TodayResponse } from "@health/shared";
 import { fetchToday, fetchUpcoming } from "../lib/api";
+import { AcceptButton } from "./components/AcceptButton";
 import { AcrBadge } from "./components/AcrBadge";
 import { Sparkline } from "./components/Sparkline";
 import { SyncButton } from "./components/SyncButton";
@@ -212,13 +213,16 @@ function SuggestionCard({ day: d }: { day: AiDaySuggestion }) {
         <p className="mt-0.5 text-xs text-neutral-400">{d.rationale}</p>
       </div>
       {!isRest && (
-        <div className="flex shrink-0 gap-3 text-right text-xs text-neutral-500">
-          {duration && <span>{duration}</span>}
-          {d.plannedLoad > 0 && (
-            <span className="font-medium text-neutral-700">
-              load {Math.round(d.plannedLoad)}
-            </span>
-          )}
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <div className="flex gap-3 text-xs text-neutral-500">
+            {duration && <span>{duration}</span>}
+            {d.plannedLoad > 0 && (
+              <span className="font-medium text-neutral-700">
+                load {Math.round(d.plannedLoad)}
+              </span>
+            )}
+          </div>
+          <AcceptButton day={d} />
         </div>
       )}
     </div>
