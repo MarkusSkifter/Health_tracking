@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { getHistory, getToday } from "../summary/queries";
+import { getActivities, getAnalytics, getHistory, getToday } from "../summary/queries";
 
 /** Routes that serve the frontend (SPEC §8, §9). */
 export async function registerSummaryRoutes(app: FastifyInstance): Promise<void> {
@@ -13,5 +13,24 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
 
   app.get("/api/history", async () => {
     return { summaries: await getHistory() };
+  });
+
+  app.get<{ Querystring: { from?: string; to?: string } }>("/api/activities", async (req) => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const mo = String(now.getMonth() + 1).padStart(2, "0");
+    const from = req.query.from ?? `${y}-${mo}-01`;
+    const to = req.query.to ?? now.toISOString().slice(0, 10);
+    return { activities: await getActivities(from, to) };
+  });
+
+  app.get<{ Querystring: { from?: string; to?: string } }>("/api/analytics", async (req) => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const mo = String(now.getMonth() + 1).padStart(2, "0");
+    const from = req.query.from ?? `${y}-${mo}-01`;
+    const to = req.query.to ?? now.toISOString().slice(0, 10);
+    const days = await getAnalytics(from, to);
+    return { days, from, to };
   });
 }
