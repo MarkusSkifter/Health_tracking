@@ -2,6 +2,7 @@ import type { TodayResponse } from "@health/shared";
 import { fetchToday } from "../lib/api";
 import { AcrBadge } from "./components/AcrBadge";
 import { Sparkline } from "./components/Sparkline";
+import { SyncButton } from "./components/SyncButton";
 
 export const revalidate = 60;
 
@@ -45,13 +46,16 @@ export default async function TodayPage() {
 
   return (
     <main className="flex flex-col gap-10">
-      <header>
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-400">
-          Today
-        </p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-          {longDate(summary.date)}
-        </h1>
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-400">
+            Today
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+            {longDate(summary.date)}
+          </h1>
+        </div>
+        <SyncButton />
       </header>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_220px]">

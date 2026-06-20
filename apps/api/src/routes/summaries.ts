@@ -1,8 +1,18 @@
 import type { FastifyInstance } from "fastify";
+import { ingestWindow } from "../ingest/ingest";
 import { getActivities, getAnalytics, getHistory, getToday } from "../summary/queries";
 
 /** Routes that serve the frontend (SPEC §8, §9). */
 export async function registerSummaryRoutes(app: FastifyInstance): Promise<void> {
+  app.post("/api/ingest", async (_req, reply) => {
+    try {
+      const result = await ingestWindow(7);
+      return reply.code(200).send({ ok: true, ...result });
+    } catch (err) {
+      app.log.error(err, "Ingest failed");
+      return reply.code(500).send({ error: "Ingest failed" });
+    }
+  });
   app.get("/api/today", async (_req, reply) => {
     const today = await getToday();
     if (!today) {
