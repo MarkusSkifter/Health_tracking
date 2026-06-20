@@ -76,5 +76,15 @@ export interface AnalyticsResponse {
   to: IsoDate;
 }
 
+/** A planned workout from the intervals.icu calendar. */
+export interface PlannedWorkout {
+  date: IsoDate;
+  name: string;
+  type: string | null;
+  plannedDurationSec: number | null;
+  plannedLoad: number | null;
+  description: string | null;
+}
+
 /** Claude model used for the daily summary (SPEC §7). */
 export const SUMMARY_MODEL = "claude-sonnet-4-6" as const;

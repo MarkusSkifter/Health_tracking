@@ -1,5 +1,5 @@
-import type { TodayResponse } from "@health/shared";
-import { fetchToday } from "../lib/api";
+import type { PlannedWorkout, TodayResponse } from "@health/shared";
+import { fetchToday, fetchUpcoming } from "../lib/api";
 import { AcrBadge } from "./components/AcrBadge";
 import { Sparkline } from "./components/Sparkline";
 import { SyncButton } from "./components/SyncButton";
@@ -22,13 +22,14 @@ function formatSleep(sec: number): string {
 
 export default async function TodayPage() {
   let today: TodayResponse | null;
+  let upcoming: PlannedWorkout[];
   try {
-    today = await fetchToday();
+    [today, upcoming] = await Promise.all([fetchToday(), fetchUpcoming()]);
   } catch {
     return (
       <EmptyState
-        title="Can't reach the server"
-        message={'The API isn’t responding. Start it with “pnpm dev:api”.'}
+        title=”Can’t reach the server”
+        message={‘The API isn’t responding. Start it with “pnpm dev:api”.’}
       />
     );
   }
@@ -123,7 +124,59 @@ export default async function TodayPage() {
           </aside>
         )}
       </div>
+
+      {upcoming.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-neutral-400">
+            This Week
+          </h2>
+          <div className="flex flex-col gap-2">
+            {upcoming.map((w) => (
+              <WorkoutCard key={`${w.date}-${w.name}`} workout={w} />
+            ))}
+          </div>
+        </section>
+      )}
     </main>
+  );
+}
+
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function WorkoutCard({ workout: w }: { workout: PlannedWorkout }) {
+  const day = DAY_NAMES[new Date(`${w.date}T00:00:00`).getDay()];
+  const duration =
+    w.plannedDurationSec != null
+      ? (() => {
+          const h = Math.floor(w.plannedDurationSec / 3600);
+          const m = Math.round((w.plannedDurationSec % 3600) / 60);
+          return h > 0 ? `${h}h ${m}m` : `${m}m`;
+        })()
+      : null;
+
+  return (
+    <div className="flex items-center gap-4 rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3">
+      <div className="w-8 shrink-0 text-center">
+        <p className="text-xs font-medium text-neutral-400">{day}</p>
+        <p className="text-sm font-semibold text-neutral-900">
+          {w.date.slice(8)}
+        </p>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-neutral-900">{w.name}</p>
+        {w.type && w.type !== w.name && (
+          <p className="text-xs text-neutral-400">{w.type}</p>
+        )}
+      </div>
+      <div className="flex shrink-0 gap-3 text-right text-xs text-neutral-500">
+        {duration && <span>{duration}</span>}
+        {w.plannedLoad != null && (
+          <span className="font-medium text-neutral-700">
+            load {Math.round(w.plannedLoad)}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 

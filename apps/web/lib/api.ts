@@ -1,4 +1,4 @@
-import type { Activity, AnalyticsDay, DailySummary, TodayResponse } from "@health/shared";
+import type { Activity, AnalyticsDay, DailySummary, PlannedWorkout, TodayResponse } from "@health/shared";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
 
@@ -24,6 +24,17 @@ export async function fetchActivities(from: string, to: string): Promise<Activit
   if (!res.ok) throw new Error(`Failed to load activities (${res.status})`);
   const data = (await res.json()) as { activities: Activity[] };
   return data.activities;
+}
+
+export async function fetchUpcoming(): Promise<PlannedWorkout[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/upcoming`, { cache: "no-store" });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { workouts: PlannedWorkout[] };
+    return data.workouts;
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchAnalytics(from: string, to: string): Promise<AnalyticsDay[]> {

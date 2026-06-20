@@ -4,6 +4,7 @@ import { db } from "../db/client";
 import { activities, dailySummary, wellness } from "../db/schema";
 import { getOrCreateUserId } from "../ingest/store";
 import { ATHLETE_TIMEZONE, isoDateInTimeZone } from "../intervals/dates";
+import { fetchUpcomingWorkouts } from "../intervals/upcoming";
 import { addDays, computeLoadMetrics } from "../metrics/load";
 import { generateSummaryText } from "./claude";
 import { buildSummaryUserPrompt } from "./prompt";
@@ -59,11 +60,13 @@ export async function generateDailySummary(
     );
 
   const metrics = computeLoadMetrics(acts, date);
+  const upcoming = await fetchUpcomingWorkouts(7).catch(() => []);
   const userPrompt = buildSummaryUserPrompt({
     date,
     metrics,
     activities: acts,
     wellness: wells,
+    upcoming,
   });
   const aiSummaryText = await generateSummaryText(userPrompt);
 

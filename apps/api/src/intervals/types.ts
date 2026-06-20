@@ -31,5 +31,16 @@ export const intervalsWellnessSchema = z.object({
   weight: z.number().nullish(),
 });
 
+export const intervalsEventSchema = z.object({
+  start_date_local: z.string(),
+  name: z.string().nullish(),
+  type: z.string().nullish(),
+  moving_time: z.number().nullish(),
+  icu_training_load: z.number().nullish(),
+  description: z.string().nullish(),
+  category: z.string().nullish(),
+});
+
 export type IntervalsActivity = z.infer<typeof intervalsActivitySchema>;
 export type IntervalsWellness = z.infer<typeof intervalsWellnessSchema>;
+export type IntervalsEvent = z.infer<typeof intervalsEventSchema>;

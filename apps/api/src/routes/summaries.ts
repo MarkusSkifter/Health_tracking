@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { ingestWindow } from "../ingest/ingest";
+import { fetchUpcomingWorkouts } from "../intervals/upcoming";
 import { getActivities, getAnalytics, getHistory, getToday } from "../summary/queries";
 
 /** Routes that serve the frontend (SPEC §8, §9). */
@@ -42,5 +43,15 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
     const to = req.query.to ?? now.toISOString().slice(0, 10);
     const days = await getAnalytics(from, to);
     return { days, from, to };
+  });
+
+  app.get("/api/upcoming", async (_req, reply) => {
+    try {
+      const workouts = await fetchUpcomingWorkouts(7);
+      return { workouts };
+    } catch (err) {
+      app.log.error(err, "Failed to fetch upcoming workouts");
+      return reply.code(500).send({ error: "Failed to fetch upcoming workouts" });
+    }
   });
 }
