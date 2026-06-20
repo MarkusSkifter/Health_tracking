@@ -76,6 +76,22 @@ export interface AnalyticsResponse {
   to: IsoDate;
 }
 
+/** One day in an AI-generated training suggestion. */
+export interface AiDaySuggestion {
+  date: IsoDate;
+  name: string;
+  type: string | null;
+  plannedDurationSec: number | null;
+  plannedLoad: number;
+  rationale: string;
+}
+
+/** A full AI-generated week plan returned when the calendar is empty. */
+export interface AiWeekPlan {
+  overview: string;
+  days: AiDaySuggestion[];
+}
+
 /** A planned workout from the intervals.icu calendar. */
 export interface PlannedWorkout {
   date: IsoDate;

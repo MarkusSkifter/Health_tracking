@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { ingestWindow } from "../ingest/ingest";
 import { fetchUpcomingWorkouts } from "../intervals/upcoming";
 import { getActivities, getAnalytics, getHistory, getToday } from "../summary/queries";
+import { generateWeekSuggestions } from "../summary/suggestions";
 
 /** Routes that serve the frontend (SPEC §8, §9). */
 export async function registerSummaryRoutes(app: FastifyInstance): Promise<void> {
@@ -48,7 +49,8 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
   app.get("/api/upcoming", async (_req, reply) => {
     try {
       const workouts = await fetchUpcomingWorkouts(7);
-      return { workouts };
+      const suggestions = workouts.length === 0 ? await generateWeekSuggestions() : null;
+      return { workouts, suggestions };
     } catch (err) {
       app.log.error(err, "Failed to fetch upcoming workouts");
       return reply.code(500).send({ error: "Failed to fetch upcoming workouts" });
