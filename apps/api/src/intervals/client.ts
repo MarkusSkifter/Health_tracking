@@ -63,4 +63,12 @@ export class IntervalsClient {
       newest,
     });
   }
+
+  /** Calendar events in `[oldest, newest]` (inclusive). */
+  getEvents(oldest: string, newest: string): Promise<unknown[]> {
+    return this.get<unknown[]>(`/api/v1/athlete/${this.athleteId}/events`, {
+      oldest,
+      newest,
+    });
+  }
 }

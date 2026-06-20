@@ -1,4 +1,4 @@
-import type { IsoDate, LoadMetrics } from "@health/shared";
+import type { IsoDate, LoadMetrics, PlannedWorkout } from "@health/shared";
 import type { ActivityRow, WellnessRow } from "../db/schema";
 import { acrZone, addDays, dailyLoadByDate } from "../metrics/load";
 
@@ -7,8 +7,8 @@ export const SUMMARY_SYSTEM_PROMPT = `You are a concise, supportive endurance-tr
 Rules:
 - Ground every statement in the numbers provided. Never invent or estimate data that isn't given.
 - The load metrics are computed and authoritative — narrate them, don't recompute or contradict them.
-- Write 3–6 sentences of plain, conversational prose. No headings, no bullet points, no markdown.
-- Cover, in order: what the athlete did (today or most recently), how that compares to recent load, and what the recovery signals (resting HR, HRV, sleep) suggest for the next day or two.
+- Write 4–7 sentences of plain, conversational prose. No headings, no bullet points, no markdown.
+- Cover, in order: what the athlete did (today or most recently), how that compares to recent load, what the recovery signals (resting HR, HRV, sleep) suggest, and — if upcoming workouts are listed — briefly comment on how the plan looks given the current fitness and recovery state. Flag any session that looks aggressive given a low HRV trend, high ACR, or accumulated fatigue, and suggest adjustments if warranted.
 - If a signal is missing, simply don't mention it — do not speculate about why.
 - Be calm and factual. Flag genuine overreaching (high acute:chronic ratio) or detraining, but don't alarm.`;
 
@@ -19,6 +19,8 @@ export interface SummaryInput {
   activities: ActivityRow[];
   /** Recent wellness window (up to 14 days, ending on `date`). */
   wellness: WellnessRow[];
+  /** Upcoming planned workouts (next 7 days from intervals.icu calendar). */
+  upcoming?: PlannedWorkout[];
 }
 
 function fmtDuration(sec: number | null): string {
@@ -47,9 +49,17 @@ function wellnessLine(w: WellnessRow): string {
   return parts.length > 0 ? parts.join(", ") : "no data";
 }
 
+function fmtPlanned(w: PlannedWorkout): string {
+  const parts: string[] = [w.name];
+  if (w.type && w.type !== w.name) parts[0] = `${w.name} (${w.type})`;
+  if (w.plannedDurationSec != null) parts.push(fmtDuration(w.plannedDurationSec));
+  if (w.plannedLoad != null) parts.push(`load ${Math.round(w.plannedLoad)}`);
+  return `- ${w.date}: ${parts.join(", ")}`;
+}
+
 /** Render the structured data block Claude narrates (SPEC §7). */
 export function buildSummaryUserPrompt(input: SummaryInput): string {
-  const { date, metrics, activities, wellness } = input;
+  const { date, metrics, activities, wellness, upcoming } = input;
 
   const todays = activities.filter((a) => a.date === date);
   const wellnessByDate = new Map(wellness.map((w) => [w.date, w]));
@@ -82,6 +92,13 @@ export function buildSummaryUserPrompt(input: SummaryInput): string {
     const load = Math.round(loadByDate.get(d) ?? 0);
     const w = wellnessByDate.get(d);
     lines.push(`- ${d}: load ${load}; ${w ? wellnessLine(w) : "—"}`);
+  }
+
+  if (upcoming && upcoming.length > 0) {
+    lines.push("", "Upcoming planned workouts (next 7 days):");
+    for (const w of upcoming) lines.push(fmtPlanned(w));
+  } else {
+    lines.push("", "Upcoming planned workouts: none scheduled in intervals.icu.");
   }
 
   return lines.join("\n");
