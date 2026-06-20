@@ -12,7 +12,7 @@ import { z } from "zod";
 export const intervalsActivitySchema = z.object({
   id: z.string(),
   start_date_local: z.string(),
-  type: z.string(),
+  type: z.string().nullish(),
   moving_time: z.number().nullish(),
   elapsed_time: z.number().nullish(),
   distance: z.number().nullish(),

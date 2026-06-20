@@ -12,7 +12,7 @@ export function toActivity(raw: unknown, userId: number): NewActivity {
     intervalsActivityId: a.id,
     // Use the athlete-local calendar day the activity started.
     date: a.start_date_local.slice(0, 10),
-    type: a.type,
+    type: a.type ?? "Unknown",
     durationSec: roundOrNull(a.moving_time ?? a.elapsed_time),
     distanceM: a.distance ?? null,
     avgPower: roundOrNull(a.icu_average_watts ?? a.average_watts),
