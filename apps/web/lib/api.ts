@@ -1,4 +1,4 @@
-import type { Activity, AnalyticsDay, DailySummary, PlannedWorkout, TodayResponse } from "@health/shared";
+import type { Activity, AiWeekPlan, AnalyticsDay, DailySummary, PlannedWorkout, TodayResponse } from "@health/shared";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
 
@@ -26,14 +26,13 @@ export async function fetchActivities(from: string, to: string): Promise<Activit
   return data.activities;
 }
 
-export async function fetchUpcoming(): Promise<PlannedWorkout[]> {
+export async function fetchUpcoming(): Promise<{ workouts: PlannedWorkout[]; suggestions: AiWeekPlan | null }> {
   try {
     const res = await fetch(`${API_BASE}/api/upcoming`, { cache: "no-store" });
-    if (!res.ok) return [];
-    const data = (await res.json()) as { workouts: PlannedWorkout[] };
-    return data.workouts;
+    if (!res.ok) return { workouts: [], suggestions: null };
+    return (await res.json()) as { workouts: PlannedWorkout[]; suggestions: AiWeekPlan | null };
   } catch {
-    return [];
+    return { workouts: [], suggestions: null };
   }
 }
 

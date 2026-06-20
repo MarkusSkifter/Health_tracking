@@ -1,4 +1,4 @@
-import type { PlannedWorkout, TodayResponse } from "@health/shared";
+import type { AiDaySuggestion, AiWeekPlan, PlannedWorkout, TodayResponse } from "@health/shared";
 import { fetchToday, fetchUpcoming } from "../lib/api";
 import { AcrBadge } from "./components/AcrBadge";
 import { Sparkline } from "./components/Sparkline";
@@ -20,16 +20,30 @@ function formatSleep(sec: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
+function fmtDuration(sec: number | null): string | null {
+  if (sec == null) return null;
+  const h = Math.floor(sec / 3600);
+  const m = Math.round((sec % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
 export default async function TodayPage() {
   let today: TodayResponse | null;
-  let upcoming: PlannedWorkout[];
+  let workouts: PlannedWorkout[];
+  let suggestions: AiWeekPlan | null;
   try {
-    [today, upcoming] = await Promise.all([fetchToday(), fetchUpcoming()]);
+    const [todayResult, upcomingResult] = await Promise.all([
+      fetchToday(),
+      fetchUpcoming(),
+    ]);
+    today = todayResult;
+    workouts = upcomingResult.workouts;
+    suggestions = upcomingResult.suggestions;
   } catch {
     return (
       <EmptyState
         title="Cannot reach the server"
-        message="The API is not responding. Start it with pnpm dev:api."
+        message="The API is not responding."
       />
     );
   }
@@ -38,7 +52,7 @@ export default async function TodayPage() {
     return (
       <EmptyState
         title="No summary yet"
-        message="Run the daily job (pnpm --filter @health/api job:daily) to generate your first summary."
+        message="Run the daily job to generate your first summary."
       />
     );
   }
@@ -60,7 +74,6 @@ export default async function TodayPage() {
       </header>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_220px]">
-        {/* Load metrics + trend + summary */}
         <div className="flex flex-col gap-8">
           <section className="flex items-end gap-6">
             <div>
@@ -87,7 +100,6 @@ export default async function TodayPage() {
           </section>
         </div>
 
-        {/* Wellness sidebar */}
         {wellness && (
           <aside className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-1 lg:content-start">
             <WellnessCard
@@ -107,36 +119,49 @@ export default async function TodayPage() {
             />
             <WellnessCard
               label="Steps"
-              value={
-                wellness.steps !== null
-                  ? wellness.steps.toLocaleString("en-GB")
-                  : null
-              }
+              value={wellness.steps !== null ? wellness.steps.toLocaleString("en-GB") : null}
               color="text-amber-600"
             />
             <WellnessCard
               label="Weight"
-              value={
-                wellness.weightKg !== null ? `${wellness.weightKg.toFixed(1)} kg` : null
-              }
+              value={wellness.weightKg !== null ? `${wellness.weightKg.toFixed(1)} kg` : null}
               color="text-slate-500"
             />
           </aside>
         )}
       </div>
 
-      {upcoming.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-neutral-400">
+      <section>
+        <div className="mb-3 flex items-center gap-3">
+          <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-400">
             This Week
           </h2>
+          {workouts.length === 0 && suggestions && (
+            <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-600">
+              AI suggested
+            </span>
+          )}
+        </div>
+
+        {workouts.length > 0 ? (
           <div className="flex flex-col gap-2">
-            {upcoming.map((w) => (
+            {workouts.map((w) => (
               <WorkoutCard key={`${w.date}-${w.name}`} workout={w} />
             ))}
           </div>
-        </section>
-      )}
+        ) : suggestions ? (
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-neutral-500">{suggestions.overview}</p>
+            <div className="flex flex-col gap-2">
+              {suggestions.days.map((d) => (
+                <SuggestionCard key={d.date} day={d} />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-neutral-400">No workouts scheduled this week.</p>
+        )}
+      </section>
     </main>
   );
 }
@@ -145,22 +170,12 @@ const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function WorkoutCard({ workout: w }: { workout: PlannedWorkout }) {
   const day = DAY_NAMES[new Date(`${w.date}T00:00:00`).getDay()];
-  const duration =
-    w.plannedDurationSec != null
-      ? (() => {
-          const h = Math.floor(w.plannedDurationSec / 3600);
-          const m = Math.round((w.plannedDurationSec % 3600) / 60);
-          return h > 0 ? `${h}h ${m}m` : `${m}m`;
-        })()
-      : null;
-
+  const duration = fmtDuration(w.plannedDurationSec);
   return (
     <div className="flex items-center gap-4 rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3">
       <div className="w-8 shrink-0 text-center">
         <p className="text-xs font-medium text-neutral-400">{day}</p>
-        <p className="text-sm font-semibold text-neutral-900">
-          {w.date.slice(8)}
-        </p>
+        <p className="text-sm font-semibold text-neutral-900">{w.date.slice(8)}</p>
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-neutral-900">{w.name}</p>
@@ -180,21 +195,41 @@ function WorkoutCard({ workout: w }: { workout: PlannedWorkout }) {
   );
 }
 
-function WellnessCard({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: string | null;
-  color: string;
-}) {
+function SuggestionCard({ day: d }: { day: AiDaySuggestion }) {
+  const dayName = DAY_NAMES[new Date(`${d.date}T00:00:00`).getDay()];
+  const duration = fmtDuration(d.plannedDurationSec);
+  const isRest = d.type === "Rest" || d.plannedLoad === 0;
+  return (
+    <div className="flex items-start gap-4 rounded-xl border border-dashed border-neutral-200 bg-white px-4 py-3">
+      <div className="w-8 shrink-0 text-center">
+        <p className="text-xs font-medium text-neutral-400">{dayName}</p>
+        <p className="text-sm font-semibold text-neutral-900">{d.date.slice(8)}</p>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className={`text-sm font-medium ${isRest ? "text-neutral-400" : "text-neutral-900"}`}>
+          {d.name}
+        </p>
+        <p className="mt-0.5 text-xs text-neutral-400">{d.rationale}</p>
+      </div>
+      {!isRest && (
+        <div className="flex shrink-0 gap-3 text-right text-xs text-neutral-500">
+          {duration && <span>{duration}</span>}
+          {d.plannedLoad > 0 && (
+            <span className="font-medium text-neutral-700">
+              load {Math.round(d.plannedLoad)}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WellnessCard({ label, value, color }: { label: string; value: string | null; color: string }) {
   return (
     <div className="rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3">
       <p className="text-xs text-neutral-400">{label}</p>
-      <p
-        className={`mt-0.5 text-lg font-semibold tabular-nums ${value ? color : "text-neutral-300"}`}
-      >
+      <p className={`mt-0.5 text-lg font-semibold tabular-nums ${value ? color : "text-neutral-300"}`}>
         {value ?? "—"}
       </p>
     </div>
