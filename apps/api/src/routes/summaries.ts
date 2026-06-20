@@ -5,6 +5,7 @@ import { IntervalsClient } from "../intervals/client";
 import { fetchUpcomingWorkouts } from "../intervals/upcoming";
 import { intervalsEnv } from "../env";
 import { getActivities, getAnalytics, getHistory, getToday } from "../summary/queries";
+import { generateDailySummary } from "../summary/generate";
 import { generateWeekSuggestions } from "../summary/suggestions";
 
 /** Routes that serve the frontend (SPEC §8, §9). */
@@ -12,6 +13,10 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
   app.post("/api/ingest", async (_req, reply) => {
     try {
       const result = await ingestWindow(7);
+      // Regenerate today's summary so the dashboard reflects newly synced activities
+      await generateDailySummary({ force: true }).catch((err) => {
+        app.log.warn(err, "Summary regeneration failed after ingest");
+      });
       return reply.code(200).send({ ok: true, ...result });
     } catch (err) {
       app.log.error(err, "Ingest failed");
