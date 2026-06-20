@@ -3,11 +3,7 @@ import { intervalsEnv } from "../env";
 import { IntervalsClient } from "./client";
 import { intervalsEventSchema } from "./types";
 
-const WORKOUT_TYPES = new Set([
-  "Ride", "Run", "Swim", "Walk", "Hike", "WeightTraining",
-  "Workout", "VirtualRide", "VirtualRun", "Rowing", "Kayaking",
-  "NordicSki", "RollerSki", "Crossfit", "Yoga", "Pilates",
-]);
+const SKIP_CATEGORIES = new Set(["NOTE", "HOLIDAY", "TARGET"]);
 
 function isoToday(): string {
   return new Date().toISOString().slice(0, 10);
@@ -37,10 +33,9 @@ export async function fetchUpcomingWorkouts(days = 7): Promise<PlannedWorkout[]>
     if (!parsed.success) continue;
     const e = parsed.data;
 
-    // Skip non-workout events (notes, races without a type, etc.)
-    if (e.category && e.category !== "WORKOUT") continue;
+    // Skip notes, holidays, and targets — keep all actual workout sessions
+    if (e.category && SKIP_CATEGORIES.has(e.category)) continue;
     if (!e.type && !e.name) continue;
-    if (e.type && !WORKOUT_TYPES.has(e.type)) continue;
 
     workouts.push({
       date: e.start_date_local.slice(0, 10),
