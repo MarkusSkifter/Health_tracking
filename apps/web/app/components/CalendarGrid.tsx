@@ -39,10 +39,125 @@ interface DayDetail {
   planned: PlannedWorkout[];
 }
 
+const WORKOUT_TYPES = ["Run", "Ride", "Swim", "Walk", "WeightTraining", "Workout"] as const;
+
+function AddWorkoutForm({ date, onCancel, onSaved }: { date: string; onCancel: () => void; onSaved: () => void }) {
+  const [name, setName] = useState("");
+  const [type, setType] = useState("Run");
+  const [durationMin, setDurationMin] = useState("");
+  const [load, setLoad] = useState("");
+  const [description, setDescription] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date,
+          name: name.trim(),
+          type: type || undefined,
+          durationMin: durationMin ? Number(durationMin) : undefined,
+          load: load ? Number(load) : undefined,
+          description: description.trim() || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      onSaved();
+    } catch {
+      setError("Failed to save. Please try again.");
+      setSaving(false);
+    }
+  }
+
+  const inputCls = "w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-300 focus:border-blue-400 focus:bg-white focus:outline-none transition-colors";
+
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-3">
+      <input
+        className={inputCls}
+        placeholder="Workout name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        required
+        autoFocus
+      />
+
+      <div className="flex gap-2">
+        <select
+          className={`${inputCls} flex-1`}
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+        >
+          {WORKOUT_TYPES.map((t) => (
+            <option key={t} value={t}>{t === "WeightTraining" ? "Weights" : t}</option>
+          ))}
+        </select>
+        <input
+          className={`${inputCls} w-24`}
+          type="number"
+          placeholder="min"
+          min="1"
+          value={durationMin}
+          onChange={(e) => setDurationMin(e.target.value)}
+        />
+        <input
+          className={`${inputCls} w-20`}
+          type="number"
+          placeholder="load"
+          min="0"
+          value={load}
+          onChange={(e) => setLoad(e.target.value)}
+        />
+      </div>
+
+      <textarea
+        className={`${inputCls} min-h-[80px] resize-y font-mono text-xs leading-relaxed`}
+        placeholder={"e.g. 15min Z1\n3x(8min @ threshold, 3min easy)\n10min cooldown"}
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+      />
+
+      {error && <p className="text-xs text-rose-500">{error}</p>}
+
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={saving || !name.trim()}
+          className="flex-1 rounded-xl bg-blue-600 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-40"
+        >
+          {saving ? "Saving..." : "Add to calendar"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-50"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function DetailPanel({ detail, onClose }: { detail: DayDetail; onClose: () => void }) {
+  const [adding, setAdding] = useState(false);
+  const [saved, setSaved] = useState(false);
+
   const label = new Intl.DateTimeFormat("en-GB", {
     weekday: "long", day: "numeric", month: "long",
   }).format(new Date(`${detail.date}T00:00:00`));
+
+  function handleSaved() {
+    setSaved(true);
+    setTimeout(() => window.location.reload(), 1000);
+  }
 
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center md:items-center" onClick={onClose}>
@@ -63,60 +178,78 @@ function DetailPanel({ detail, onClose }: { detail: DayDetail; onClose: () => vo
           </button>
         </div>
 
-        {detail.activities.length === 0 && detail.planned.length === 0 && (
-          <p className="text-sm text-slate-400">No activities or planned workouts.</p>
-        )}
+        {saved ? (
+          <p className="text-sm font-medium text-emerald-600">Workout added to intervals.icu!</p>
+        ) : adding ? (
+          <AddWorkoutForm date={detail.date} onCancel={() => setAdding(false)} onSaved={handleSaved} />
+        ) : (
+          <>
+            {detail.activities.length === 0 && detail.planned.length === 0 && (
+              <p className="mb-5 text-sm text-slate-400">No activities or planned workouts.</p>
+            )}
 
-        {detail.activities.length > 0 && (
-          <div className="mb-5">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Completed</p>
-            <div className="flex flex-col gap-2">
-              {detail.activities.map((a) => {
-                const c = typeColor(a.type);
-                return (
-                  <div key={a.intervalsActivityId} className="flex items-center gap-3">
-                    <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${c.bg} ${c.text}`}>
-                      {shortType(a.type)}
-                    </span>
-                    <span className="text-sm text-slate-700">{fmtDuration(a.durationSec)}</span>
-                    {a.distanceM != null && (
-                      <span className="text-sm text-slate-500">{(a.distanceM / 1000).toFixed(1)} km</span>
-                    )}
-                    {a.avgPower != null && (
-                      <span className="text-sm text-slate-400">{a.avgPower} W</span>
-                    )}
-                    {a.trainingLoad != null && (
-                      <span className="ml-auto text-xs text-slate-400">load {Math.round(a.trainingLoad)}</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {detail.planned.length > 0 && (
-          <div>
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Planned</p>
-            <div className="flex flex-col gap-2">
-              {detail.planned.map((w) => (
-                <div key={`${w.date}-${w.name}`}>
-                  <div className="flex items-center gap-3">
-                    <span className="rounded-md border border-dashed border-violet-300 bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700">
-                      {shortType(w.type)}
-                    </span>
-                    <span className="text-sm font-medium text-slate-800">{w.name}</span>
-                    {w.plannedDurationSec != null && (
-                      <span className="ml-auto text-sm text-slate-400">{fmtDuration(w.plannedDurationSec)}</span>
-                    )}
-                  </div>
-                  {w.description && (
-                    <p className="mt-1 pl-1 text-xs leading-relaxed text-slate-400">{w.description}</p>
-                  )}
+            {detail.activities.length > 0 && (
+              <div className="mb-5">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Completed</p>
+                <div className="flex flex-col gap-2">
+                  {detail.activities.map((a) => {
+                    const c = typeColor(a.type);
+                    return (
+                      <div key={a.intervalsActivityId} className="flex items-center gap-3">
+                        <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${c.bg} ${c.text}`}>
+                          {shortType(a.type)}
+                        </span>
+                        <span className="text-sm text-slate-700">{fmtDuration(a.durationSec)}</span>
+                        {a.distanceM != null && (
+                          <span className="text-sm text-slate-500">{(a.distanceM / 1000).toFixed(1)} km</span>
+                        )}
+                        {a.avgPower != null && (
+                          <span className="text-sm text-slate-400">{a.avgPower} W</span>
+                        )}
+                        {a.trainingLoad != null && (
+                          <span className="ml-auto text-xs text-slate-400">load {Math.round(a.trainingLoad)}</span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+            )}
+
+            {detail.planned.length > 0 && (
+              <div className="mb-5">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Planned</p>
+                <div className="flex flex-col gap-2">
+                  {detail.planned.map((w) => (
+                    <div key={`${w.date}-${w.name}`}>
+                      <div className="flex items-center gap-3">
+                        <span className="rounded-md border border-dashed border-violet-300 bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700">
+                          {shortType(w.type)}
+                        </span>
+                        <span className="text-sm font-medium text-slate-800">{w.name}</span>
+                        {w.plannedDurationSec != null && (
+                          <span className="ml-auto text-sm text-slate-400">{fmtDuration(w.plannedDurationSec)}</span>
+                        )}
+                      </div>
+                      {w.description && (
+                        <p className="mt-1 pl-1 text-xs leading-relaxed text-slate-400">{w.description}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={() => setAdding(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 py-2.5 text-sm font-medium text-slate-400 transition-colors hover:border-blue-300 hover:text-blue-600"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Add workout
+            </button>
+          </>
         )}
       </div>
     </div>
