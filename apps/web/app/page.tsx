@@ -1,7 +1,8 @@
 import type { AiDaySuggestion, AiWeekPlan, PlannedWorkout, TodayResponse } from "@health/shared";
-import { fetchToday, fetchUpcoming } from "../lib/api";
+import { fetchActivities, fetchEvents, fetchToday, fetchUpcoming } from "../lib/api";
 import { AcceptButton } from "./components/AcceptButton";
 import { AcrBadge } from "./components/AcrBadge";
+import { ExpandableCalendar } from "./components/ExpandableCalendar";
 import { Sparkline } from "./components/Sparkline";
 import { SyncButton } from "./components/SyncButton";
 
@@ -29,17 +30,30 @@ function fmtDuration(sec: number | null): string | null {
 }
 
 export default async function TodayPage() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const mo = String(now.getMonth() + 1).padStart(2, "0");
+  const monthFrom = `${y}-${mo}-01`;
+  const monthTo = `${y}-${mo}-${new Date(y, now.getMonth() + 1, 0).getDate()}`;
+
   let today: TodayResponse | null;
-  let workouts: PlannedWorkout[];
-  let suggestions: AiWeekPlan | null;
+  let workouts: PlannedWorkout[] = [];
+  let suggestions: AiWeekPlan | null = null;
+  let monthActivities = [];
+  let monthPlanned: PlannedWorkout[] = [];
+
   try {
-    const [todayResult, upcomingResult] = await Promise.all([
+    const [todayResult, upcomingResult, acts, evts] = await Promise.all([
       fetchToday(),
       fetchUpcoming(),
+      fetchActivities(monthFrom, monthTo).catch(() => []),
+      fetchEvents(monthFrom, monthTo).catch(() => []),
     ]);
     today = todayResult;
     workouts = upcomingResult.workouts;
     suggestions = upcomingResult.suggestions;
+    monthActivities = acts as typeof monthActivities;
+    monthPlanned = evts;
   } catch {
     return (
       <EmptyState
@@ -61,48 +75,68 @@ export default async function TodayPage() {
   const { summary, wellness, trend } = today;
 
   return (
-    <main className="flex flex-col gap-10">
+    <main className="flex flex-col gap-8">
+      {/* Page header */}
       <header className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-400">
-            Today
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Today</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
             {longDate(summary.date)}
           </h1>
         </div>
-        <SyncButton />
+        <div className="mt-0.5">
+          <SyncButton />
+        </div>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_220px]">
-        <div className="flex flex-col gap-8">
-          <section className="flex items-end gap-6">
-            <div>
-              <p className="text-7xl font-semibold tabular-nums tracking-tight leading-none">
-                {Math.round(summary.trainingLoadDaily)}
+      {/* 7-day strip + expandable calendar */}
+      <ExpandableCalendar
+        initialActivities={monthActivities}
+        initialPlanned={monthPlanned}
+        year={y}
+        month={now.getMonth() + 1}
+      />
+
+      {/* Load + sparkline + wellness */}
+      <div className="grid gap-5 lg:grid-cols-[1fr_200px]">
+        <div className="flex flex-col gap-5">
+          {/* Load hero */}
+          <div className="rounded-2xl border border-slate-100 bg-white p-6">
+            <div className="flex items-end gap-5">
+              <div>
+                <p className="text-6xl font-bold tabular-nums tracking-tight leading-none text-slate-900">
+                  {Math.round(summary.trainingLoadDaily)}
+                </p>
+                <p className="mt-2 text-sm text-slate-400">Training load today</p>
+              </div>
+              <div className="mb-1">
+                <AcrBadge ratio={summary.acuteChronicRatio} />
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <Sparkline values={trend.map((t) => t.trainingLoadDaily)} />
+              <div className="mt-1.5 flex justify-between text-xs text-slate-400">
+                <span>7d avg {Math.round(summary.load7d)}</span>
+                <span>28d avg {Math.round(summary.load28d)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* AI summary */}
+          {summary.aiSummaryText && (
+            <div className="rounded-2xl border border-slate-100 bg-white px-6 py-5">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Coach</p>
+              <p className="text-[15px] leading-relaxed text-slate-700">
+                {summary.aiSummaryText}
               </p>
-              <p className="mt-2 text-sm text-neutral-500">Training load today</p>
             </div>
-            <AcrBadge ratio={summary.acuteChronicRatio} />
-          </section>
-
-          <section>
-            <Sparkline values={trend.map((t) => t.trainingLoadDaily)} />
-            <div className="mt-1.5 flex justify-between text-xs text-neutral-400">
-              <span>7-day {Math.round(summary.load7d)}</span>
-              <span>28-day {Math.round(summary.load28d)}</span>
-            </div>
-          </section>
-
-          <section>
-            <p className="text-[15px] leading-relaxed text-neutral-700">
-              {summary.aiSummaryText}
-            </p>
-          </section>
+          )}
         </div>
 
+        {/* Wellness sidebar */}
         {wellness && (
-          <aside className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-1 lg:content-start">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1 lg:content-start">
             <WellnessCard
               label="HRV"
               value={wellness.hrv !== null ? `${Math.round(wellness.hrv)} ms` : null}
@@ -111,7 +145,7 @@ export default async function TodayPage() {
             <WellnessCard
               label="Resting HR"
               value={wellness.restingHr !== null ? `${wellness.restingHr} bpm` : null}
-              color="text-rose-600"
+              color="text-rose-500"
             />
             <WellnessCard
               label="Sleep"
@@ -128,96 +162,57 @@ export default async function TodayPage() {
               value={wellness.weightKg !== null ? `${wellness.weightKg.toFixed(1)} kg` : null}
               color="text-slate-500"
             />
-          </aside>
+          </div>
         )}
       </div>
 
-      <section>
-        <div className="mb-3 flex items-center gap-3">
-          <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-400">
-            This Week
-          </h2>
-          {workouts.length === 0 && suggestions && (
-            <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-600">
-              AI suggested
+      {/* AI week suggestions (only when no real planned workouts) */}
+      {workouts.length === 0 && suggestions && (
+        <section>
+          <div className="mb-3 flex items-center gap-2.5">
+            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+              AI suggested week
+            </h2>
+            <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-semibold text-violet-600">
+              AI
             </span>
-          )}
-        </div>
-
-        {workouts.length > 0 ? (
+          </div>
+          <p className="mb-3 text-sm text-slate-500">{suggestions.overview}</p>
           <div className="flex flex-col gap-2">
-            {workouts.map((w) => (
-              <WorkoutCard key={`${w.date}-${w.name}`} workout={w} />
+            {suggestions.days.map((d) => (
+              <SuggestionCard key={d.date} day={d} />
             ))}
           </div>
-        ) : suggestions ? (
-          <div className="flex flex-col gap-3">
-            <p className="text-sm text-neutral-500">{suggestions.overview}</p>
-            <div className="flex flex-col gap-2">
-              {suggestions.days.map((d) => (
-                <SuggestionCard key={d.date} day={d} />
-              ))}
-            </div>
-          </div>
-        ) : (
-          <p className="text-sm text-neutral-400">No workouts scheduled this week.</p>
-        )}
-      </section>
+        </section>
+      )}
     </main>
   );
 }
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-function WorkoutCard({ workout: w }: { workout: PlannedWorkout }) {
-  const day = DAY_NAMES[new Date(`${w.date}T00:00:00`).getDay()];
-  const duration = fmtDuration(w.plannedDurationSec);
-  return (
-    <div className="flex items-center gap-4 rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3">
-      <div className="w-8 shrink-0 text-center">
-        <p className="text-xs font-medium text-neutral-400">{day}</p>
-        <p className="text-sm font-semibold text-neutral-900">{w.date.slice(8)}</p>
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-neutral-900">{w.name}</p>
-        {w.type && w.type !== w.name && (
-          <p className="text-xs text-neutral-400">{w.type}</p>
-        )}
-      </div>
-      <div className="flex shrink-0 gap-3 text-right text-xs text-neutral-500">
-        {duration && <span>{duration}</span>}
-        {w.plannedLoad != null && (
-          <span className="font-medium text-neutral-700">
-            load {Math.round(w.plannedLoad)}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function SuggestionCard({ day: d }: { day: AiDaySuggestion }) {
   const dayName = DAY_NAMES[new Date(`${d.date}T00:00:00`).getDay()];
   const duration = fmtDuration(d.plannedDurationSec);
   const isRest = d.type === "Rest" || d.plannedLoad === 0;
   return (
-    <div className="flex items-start gap-4 rounded-xl border border-dashed border-neutral-200 bg-white px-4 py-3">
-      <div className="w-8 shrink-0 text-center">
-        <p className="text-xs font-medium text-neutral-400">{dayName}</p>
-        <p className="text-sm font-semibold text-neutral-900">{d.date.slice(8)}</p>
+    <div className="flex items-start gap-4 rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-3.5">
+      <div className="w-9 shrink-0 text-center">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{dayName}</p>
+        <p className="text-sm font-bold text-slate-900">{d.date.slice(8)}</p>
       </div>
       <div className="min-w-0 flex-1">
-        <p className={`text-sm font-medium ${isRest ? "text-neutral-400" : "text-neutral-900"}`}>
+        <p className={`text-sm font-medium ${isRest ? "text-slate-400" : "text-slate-900"}`}>
           {d.name}
         </p>
-        <p className="mt-0.5 text-xs text-neutral-400">{d.rationale}</p>
+        <p className="mt-0.5 text-xs leading-relaxed text-slate-400">{d.rationale}</p>
       </div>
       {!isRest && (
-        <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <div className="flex gap-3 text-xs text-neutral-500">
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <div className="flex gap-3 text-xs text-slate-400">
             {duration && <span>{duration}</span>}
             {d.plannedLoad > 0 && (
-              <span className="font-medium text-neutral-700">
+              <span className="font-semibold text-slate-600">
                 load {Math.round(d.plannedLoad)}
               </span>
             )}
@@ -231,9 +226,9 @@ function SuggestionCard({ day: d }: { day: AiDaySuggestion }) {
 
 function WellnessCard({ label, value, color }: { label: string; value: string | null; color: string }) {
   return (
-    <div className="rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3">
-      <p className="text-xs text-neutral-400">{label}</p>
-      <p className={`mt-0.5 text-lg font-semibold tabular-nums ${value ? color : "text-neutral-300"}`}>
+    <div className="rounded-2xl border border-slate-100 bg-white px-4 py-4">
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">{label}</p>
+      <p className={`mt-1.5 text-lg font-bold tabular-nums ${value ? color : "text-slate-200"}`}>
         {value ?? "—"}
       </p>
     </div>
@@ -242,9 +237,14 @@ function WellnessCard({ label, value, color }: { label: string; value: string | 
 
 function EmptyState({ title, message }: { title: string; message: string }) {
   return (
-    <main className="flex min-h-[60dvh] flex-col items-center justify-center gap-2 text-center">
-      <h1 className="text-lg font-semibold">{title}</h1>
-      <p className="max-w-xs text-sm text-neutral-500">{message}</p>
+    <main className="flex min-h-[60dvh] flex-col items-center justify-center gap-3 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
+      </div>
+      <h1 className="text-base font-semibold text-slate-900">{title}</h1>
+      <p className="max-w-xs text-sm text-slate-400">{message}</p>
     </main>
   );
 }

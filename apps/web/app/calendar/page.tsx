@@ -1,4 +1,4 @@
-﻿import type { Activity, PlannedWorkout } from "@health/shared";
+import type { Activity, PlannedWorkout } from "@health/shared";
 import Link from "next/link";
 import { fetchActivities, fetchEvents } from "../../lib/api";
 import { CalendarGrid } from "../components/CalendarGrid";
@@ -63,53 +63,60 @@ export default async function CalendarPage({ searchParams }: { searchParams: Sea
     <main className="flex flex-col gap-8">
       <header className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-400">
-            Calendar
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Calendar</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
             {monthLabel(month)}
           </h1>
         </div>
-        <div className="flex items-center gap-1 text-sm">
+        <div className="flex items-center gap-0.5">
           <Link
             href={`/calendar?month=${prev}`}
-            className="rounded-lg px-3 py-1.5 text-neutral-500 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
+            className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-medium text-slate-400 transition-colors hover:bg-white hover:text-slate-700"
           >
-            &larr; {monthShort(prev)}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+            {monthShort(prev)}
           </Link>
           {!isFuture && (
             <Link
               href={`/calendar?month=${next}`}
-              className="rounded-lg px-3 py-1.5 text-neutral-500 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
+              className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-medium text-slate-400 transition-colors hover:bg-white hover:text-slate-700"
             >
-              {monthShort(next)} &rarr;
+              {monthShort(next)}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
             </Link>
           )}
         </div>
       </header>
 
-      <CalendarGrid
-        year={year}
-        month={monthNum}
-        activities={activities}
-        planned={planned}
-      />
+      <div className="rounded-2xl border border-slate-100 bg-white p-4">
+        <CalendarGrid
+          year={year}
+          month={monthNum}
+          activities={activities}
+          planned={planned}
+        />
+      </div>
 
-      <div className="flex flex-wrap gap-4 text-xs text-neutral-400">
+      {/* Legend */}
+      <div className="flex flex-wrap gap-5 text-xs text-slate-400">
         <span className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded bg-emerald-100" /> Run
+          <span className="h-2.5 w-2.5 rounded-sm bg-emerald-100" /> Run
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded bg-amber-100" /> Ride
+          <span className="h-2.5 w-2.5 rounded-sm bg-amber-100" /> Ride
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded bg-blue-100" /> Swim
+          <span className="h-2.5 w-2.5 rounded-sm bg-blue-100" /> Swim
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded bg-violet-100" /> Other
+          <span className="h-2.5 w-2.5 rounded-sm bg-slate-100" /> Other
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded border border-dashed border-violet-300" /> Planned
+          <span className="h-2.5 w-2.5 rounded-sm border border-dashed border-violet-300" /> Planned
         </span>
       </div>
     </main>

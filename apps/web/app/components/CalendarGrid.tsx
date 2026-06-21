@@ -1,21 +1,21 @@
-﻿"use client";
+"use client";
 
 import type { Activity, PlannedWorkout } from "@health/shared";
 import { useState } from "react";
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-  Ride: { bg: "bg-amber-100", text: "text-amber-700" },
-  VirtualRide: { bg: "bg-amber-100", text: "text-amber-700" },
-  Run: { bg: "bg-emerald-100", text: "text-emerald-700" },
-  VirtualRun: { bg: "bg-emerald-100", text: "text-emerald-700" },
-  Swim: { bg: "bg-blue-100", text: "text-blue-700" },
-  Walk: { bg: "bg-teal-100", text: "text-teal-700" },
-  WeightTraining: { bg: "bg-violet-100", text: "text-violet-700" },
-  Workout: { bg: "bg-neutral-100", text: "text-neutral-600" },
+  Ride: { bg: "bg-amber-50", text: "text-amber-700" },
+  VirtualRide: { bg: "bg-amber-50", text: "text-amber-700" },
+  Run: { bg: "bg-emerald-50", text: "text-emerald-700" },
+  VirtualRun: { bg: "bg-emerald-50", text: "text-emerald-700" },
+  Swim: { bg: "bg-blue-50", text: "text-blue-700" },
+  Walk: { bg: "bg-teal-50", text: "text-teal-700" },
+  WeightTraining: { bg: "bg-violet-50", text: "text-violet-700" },
+  Workout: { bg: "bg-slate-100", text: "text-slate-600" },
 };
 
 function typeColor(type: string | null) {
-  return TYPE_COLORS[type ?? ""] ?? { bg: "bg-neutral-100", text: "text-neutral-600" };
+  return TYPE_COLORS[type ?? ""] ?? { bg: "bg-slate-100", text: "text-slate-600" };
 }
 
 function fmtDuration(sec: number | null): string {
@@ -46,64 +46,76 @@ function DetailPanel({ detail, onClose }: { detail: DayDetail; onClose: () => vo
 
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center md:items-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/20" />
+      <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
       <div
-        className="relative z-50 w-full max-w-sm rounded-t-2xl md:rounded-2xl bg-white p-5 shadow-xl"
+        className="relative z-50 w-full max-w-sm rounded-t-2xl md:rounded-2xl bg-white p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <p className="font-semibold text-neutral-900">{label}</p>
-          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-700 text-lg leading-none">
-            &times;
+        <div className="mb-5 flex items-center justify-between">
+          <p className="font-semibold text-slate-900">{label}</p>
+          <button
+            onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
         {detail.activities.length === 0 && detail.planned.length === 0 && (
-          <p className="text-sm text-neutral-400">No activities or planned workouts.</p>
+          <p className="text-sm text-slate-400">No activities or planned workouts.</p>
         )}
 
         {detail.activities.length > 0 && (
-          <div className="flex flex-col gap-2 mb-4">
-            <p className="text-xs font-medium uppercase tracking-wider text-neutral-400">Completed</p>
-            {detail.activities.map((a) => {
-              const c = typeColor(a.type);
-              return (
-                <div key={a.intervalsActivityId} className="flex items-center gap-3">
-                  <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${c.bg} ${c.text}`}>
-                    {shortType(a.type)}
-                  </span>
-                  <span className="text-sm text-neutral-700">{fmtDuration(a.durationSec)}</span>
-                  {a.distanceM != null && (
-                    <span className="text-sm text-neutral-500">{(a.distanceM / 1000).toFixed(1)} km</span>
-                  )}
-                  {a.trainingLoad != null && (
-                    <span className="text-sm text-neutral-400">load {Math.round(a.trainingLoad)}</span>
-                  )}
-                </div>
-              );
-            })}
+          <div className="mb-5">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Completed</p>
+            <div className="flex flex-col gap-2">
+              {detail.activities.map((a) => {
+                const c = typeColor(a.type);
+                return (
+                  <div key={a.intervalsActivityId} className="flex items-center gap-3">
+                    <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${c.bg} ${c.text}`}>
+                      {shortType(a.type)}
+                    </span>
+                    <span className="text-sm text-slate-700">{fmtDuration(a.durationSec)}</span>
+                    {a.distanceM != null && (
+                      <span className="text-sm text-slate-500">{(a.distanceM / 1000).toFixed(1)} km</span>
+                    )}
+                    {a.avgPower != null && (
+                      <span className="text-sm text-slate-400">{a.avgPower} W</span>
+                    )}
+                    {a.trainingLoad != null && (
+                      <span className="ml-auto text-xs text-slate-400">load {Math.round(a.trainingLoad)}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
         {detail.planned.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-medium uppercase tracking-wider text-neutral-400">Planned</p>
-            {detail.planned.map((w) => (
-              <div key={`${w.date}-${w.name}`} className="flex flex-col gap-0.5">
-                <div className="flex items-center gap-3">
-                  <span className="rounded-md border border-dashed border-violet-300 bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700">
-                    {shortType(w.type)}
-                  </span>
-                  <span className="text-sm font-medium text-neutral-800">{w.name}</span>
-                  {w.plannedDurationSec != null && (
-                    <span className="text-sm text-neutral-500">{fmtDuration(w.plannedDurationSec)}</span>
+          <div>
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Planned</p>
+            <div className="flex flex-col gap-2">
+              {detail.planned.map((w) => (
+                <div key={`${w.date}-${w.name}`}>
+                  <div className="flex items-center gap-3">
+                    <span className="rounded-md border border-dashed border-violet-300 bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700">
+                      {shortType(w.type)}
+                    </span>
+                    <span className="text-sm font-medium text-slate-800">{w.name}</span>
+                    {w.plannedDurationSec != null && (
+                      <span className="ml-auto text-sm text-slate-400">{fmtDuration(w.plannedDurationSec)}</span>
+                    )}
+                  </div>
+                  {w.description && (
+                    <p className="mt-1 pl-1 text-xs leading-relaxed text-slate-400">{w.description}</p>
                   )}
                 </div>
-                {w.description && (
-                  <p className="text-xs text-neutral-400 pl-1">{w.description}</p>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -118,16 +130,17 @@ export function CalendarGrid({
   month,
   activities,
   planned,
+  compact = false,
 }: {
   year: number;
   month: number;
   activities: Activity[];
   planned: PlannedWorkout[];
+  compact?: boolean;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const today = new Date().toISOString().slice(0, 10);
 
-  // Build a map: date -> {activities, planned}
   const byDate = new Map<string, { activities: Activity[]; planned: PlannedWorkout[] }>();
   for (const a of activities) {
     const e = byDate.get(a.date) ?? { activities: [], planned: [] };
@@ -140,61 +153,65 @@ export function CalendarGrid({
     byDate.set(w.date, e);
   }
 
-  // Calendar grid: first day of month (ISO week: Mon=0 ... Sun=6)
   const firstDay = new Date(year, month - 1, 1);
-  const dayOfWeek = (firstDay.getDay() + 6) % 7; // Monday-based offset
+  const dayOfWeek = (firstDay.getDay() + 6) % 7;
   const daysInMonth = new Date(year, month, 0).getDate();
-
-  // Build cells: nulls for leading padding, then day numbers
   const cells: (number | null)[] = [
     ...Array(dayOfWeek).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
-  // Pad to full weeks
   while (cells.length % 7 !== 0) cells.push(null);
 
+  const cellH = compact ? "h-16" : "h-20";
   const selectedDetail = selected
     ? { date: selected, ...(byDate.get(selected) ?? { activities: [], planned: [] }) }
     : null;
 
   return (
     <>
-      <div className="rounded-xl border border-neutral-100 overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-slate-100">
         {/* Weekday headers */}
-        <div className="grid grid-cols-7 border-b border-neutral-100 bg-neutral-50">
-          {WEEKDAYS.map((d) => (
-            <div key={d} className="py-2 text-center text-xs font-medium text-neutral-400">
+        <div className="grid grid-cols-7 border-b border-slate-100">
+          {WEEKDAYS.map((d, i) => (
+            <div
+              key={d}
+              className={`py-2 text-center text-[11px] font-semibold uppercase tracking-wider ${
+                i >= 5 ? "text-slate-300" : "text-slate-400"
+              }`}
+            >
               {d}
             </div>
           ))}
         </div>
 
         {/* Day cells */}
-        <div className="grid grid-cols-7 divide-x divide-y divide-neutral-50">
+        <div className="grid grid-cols-7 divide-x divide-y divide-slate-50">
           {cells.map((day, idx) => {
             if (!day) {
-              return <div key={`pad-${idx}`} className="h-20 bg-neutral-50/50" />;
+              return <div key={`pad-${idx}`} className={`${cellH} bg-slate-50/40`} />;
             }
+            const d = new Date(year, month - 1, day);
             const iso = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
             const entry = byDate.get(iso);
             const isToday = iso === today;
             const isPast = iso < today;
+            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
 
             return (
               <button
                 key={iso}
                 onClick={() => setSelected(iso === selected ? null : iso)}
-                className={`h-20 p-1.5 text-left flex flex-col gap-0.5 transition-colors hover:bg-neutral-50 ${
-                  selected === iso ? "bg-neutral-50 ring-1 ring-inset ring-neutral-200" : ""
-                }`}
+                className={`${cellH} p-1.5 text-left flex flex-col gap-0.5 transition-colors hover:bg-slate-50 ${
+                  isWeekend && !isToday ? "bg-slate-50/30" : ""
+                } ${selected === iso ? "ring-1 ring-inset ring-blue-200 bg-blue-50/30" : ""}`}
               >
                 <span
-                  className={`text-xs font-medium w-5 h-5 flex items-center justify-center rounded-full ${
+                  className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium ${
                     isToday
-                      ? "bg-neutral-900 text-white"
+                      ? "bg-blue-600 text-white"
                       : isPast
-                        ? "text-neutral-400"
-                        : "text-neutral-700"
+                        ? isWeekend ? "text-slate-300" : "text-slate-400"
+                        : isWeekend ? "text-slate-400" : "text-slate-700"
                   }`}
                 >
                   {day}
@@ -206,24 +223,21 @@ export function CalendarGrid({
                     return (
                       <span
                         key={a.intervalsActivityId}
-                        className={`truncate rounded px-1 py-px text-[10px] font-medium leading-tight ${c.bg} ${c.text}`}
+                        className={`truncate rounded px-1 py-px text-[9px] font-semibold leading-tight ${c.bg} ${c.text}`}
                       >
                         {shortType(a.type)}
-                        {a.durationSec ? ` ${fmtDuration(a.durationSec)}` : ""}
+                        {a.durationSec && !compact ? ` ${fmtDuration(a.durationSec)}` : ""}
                       </span>
                     );
                   })}
-                  {entry?.planned.slice(0, 1).map((w) => (
+                  {entry?.planned.slice(0, compact ? 1 : 2).map((w) => (
                     <span
                       key={`${w.date}-${w.name}`}
-                      className="truncate rounded border border-dashed border-violet-300 px-1 py-px text-[10px] font-medium leading-tight text-violet-600"
+                      className="truncate rounded border border-dashed border-violet-300 px-1 py-px text-[9px] font-semibold leading-tight text-violet-600"
                     >
-                      {w.name}
+                      {compact ? shortType(w.type) : w.name}
                     </span>
                   ))}
-                  {(entry?.activities.length ?? 0) + (entry?.planned.length ?? 0) > 3 && (
-                    <span className="text-[9px] text-neutral-400 px-1">+more</span>
-                  )}
                 </div>
               </button>
             );

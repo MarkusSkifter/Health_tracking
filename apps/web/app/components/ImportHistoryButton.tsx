@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 
@@ -13,12 +13,8 @@ export function ImportHistoryButton() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ days: 365 }),
       });
-      if (res.ok) {
-        setState("done");
-      } else {
-        setState("error");
-        setTimeout(() => setState("idle"), 4000);
-      }
+      setState(res.ok ? "done" : "error");
+      if (!res.ok) setTimeout(() => setState("idle"), 4000);
     } catch {
       setState("error");
       setTimeout(() => setState("idle"), 4000);
@@ -28,7 +24,7 @@ export function ImportHistoryButton() {
   if (state === "done") {
     return (
       <p className="text-sm font-medium text-emerald-600">
-        Import complete — refresh the analytics page to see your full history.
+        Import complete — refresh Analytics to see your full history.
       </p>
     );
   }
@@ -38,15 +34,14 @@ export function ImportHistoryButton() {
       <button
         onClick={handleImport}
         disabled={state === "loading"}
-        className="w-fit rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-80 disabled:opacity-40"
+        className="w-fit rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-all duration-150 hover:bg-blue-700 disabled:opacity-50"
       >
-        {state === "loading" ? "Importing... (this may take a minute)" : state === "error" ? "Failed — retry" : "Import full history"}
+        {state === "loading"
+          ? "Importing… (this may take a minute)"
+          : state === "error"
+            ? "Failed — retry"
+            : "Import full history"}
       </button>
-      {state === "idle" && (
-        <p className="text-xs text-neutral-400">
-          Pulls up to 365 days of activities and wellness from intervals.icu.
-        </p>
-      )}
     </div>
   );
 }

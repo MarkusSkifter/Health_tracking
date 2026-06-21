@@ -24,8 +24,8 @@ export function AcceptButton({ day }: { day: AiDaySuggestion }) {
 
   if (state === "done") {
     return (
-      <span className="text-xs font-medium text-emerald-600">
-        Added to calendar
+      <span className="text-xs font-semibold text-emerald-600">
+        Added
       </span>
     );
   }
@@ -34,9 +34,9 @@ export function AcceptButton({ day }: { day: AiDaySuggestion }) {
     <button
       onClick={handleAccept}
       disabled={state === "loading"}
-      className="rounded-lg bg-neutral-900 px-2.5 py-1 text-xs font-medium text-white transition-opacity hover:opacity-80 disabled:opacity-40"
+      className="rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition-all duration-150 hover:bg-blue-700 disabled:opacity-40"
     >
-      {state === "loading" ? "Adding..." : state === "error" ? "Failed — retry" : "Accept workout"}
+      {state === "loading" ? "Adding…" : state === "error" ? "Retry" : "Accept"}
     </button>
   );
 }

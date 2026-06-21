@@ -1,8 +1,7 @@
-/** Dependency-free SVG sparkline of recent daily training load. */
 export function Sparkline({
   values,
   width = 320,
-  height = 56,
+  height = 48,
 }: {
   values: number[];
   width?: number;
@@ -28,19 +27,21 @@ export function Sparkline({
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
-      className="w-full text-neutral-900"
+      className="w-full"
+      style={{ height }}
       role="img"
       aria-label="Recent training load trend"
     >
       <polyline
         fill="none"
-        stroke="currentColor"
+        stroke="#2563EB"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
+        strokeOpacity="0.4"
         points={points.join(" ")}
       />
-      <circle cx={lastX.toFixed(1)} cy={lastY.toFixed(1)} r="3" fill="currentColor" />
+      <circle cx={lastX.toFixed(1)} cy={lastY.toFixed(1)} r="3" fill="#2563EB" />
     </svg>
   );
 }
