@@ -1,4 +1,4 @@
-import type { AiDaySuggestion, AiWeekPlan, PlannedWorkout, TodayResponse } from "@health/shared";
+import type { Activity, AiDaySuggestion, AiWeekPlan, PlannedWorkout, TodayResponse } from "@health/shared";
 import { fetchActivities, fetchEvents, fetchToday, fetchUpcoming } from "../lib/api";
 import { AcceptButton } from "./components/AcceptButton";
 import { AcrBadge } from "./components/AcrBadge";
@@ -39,7 +39,7 @@ export default async function TodayPage() {
   let today: TodayResponse | null;
   let workouts: PlannedWorkout[] = [];
   let suggestions: AiWeekPlan | null = null;
-  let monthActivities = [];
+  let monthActivities: Activity[] = [];
   let monthPlanned: PlannedWorkout[] = [];
 
   try {
