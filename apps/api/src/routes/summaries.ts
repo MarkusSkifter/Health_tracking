@@ -101,6 +101,26 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
     }
   });
 
+  app.post<{ Body: { date: string; name: string; type?: string; durationMin?: number; load?: number; description?: string } }>("/api/events", async (req, reply) => {
+    try {
+      const { date, name, type, durationMin, load, description } = req.body;
+      const { INTERVALS_API_KEY, INTERVALS_ATHLETE_ID } = intervalsEnv();
+      const client = new IntervalsClient({ apiKey: INTERVALS_API_KEY, athleteId: INTERVALS_ATHLETE_ID });
+      await client.createEvent({
+        start_date_local: `${date}T08:00:00`,
+        name,
+        type: type || undefined,
+        moving_time: durationMin ? durationMin * 60 : undefined,
+        icu_training_load: load || undefined,
+        description: description || undefined,
+      });
+      return { ok: true };
+    } catch (err) {
+      app.log.error(err, "Failed to create workout");
+      return reply.code(500).send({ error: "Failed to create workout" });
+    }
+  });
+
   app.post<{ Body: AiDaySuggestion }>("/api/calendar/event", async (req, reply) => {
     try {
       const day = req.body;

@@ -14,3 +14,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ workouts: [] });
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const res = await fetch(`${API_BASE}/api/events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return NextResponse.json(await res.json(), { status: res.status });
+  } catch {
+    return NextResponse.json({ error: "Failed to create workout" }, { status: 500 });
+  }
+}

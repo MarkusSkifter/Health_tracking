@@ -12,6 +12,8 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await app.register(cors, { origin: true });
 
+  app.get("/", async () => ({ status: "ok", service: "@health/api" }));
+
   app.get("/health", async () => ({
     status: "ok",
     service: "@health/api",
