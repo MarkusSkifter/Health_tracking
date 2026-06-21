@@ -1,4 +1,4 @@
-import type { Activity, AiWeekPlan, AnalyticsDay, DailySummary, PlannedWorkout, TodayResponse } from "@health/shared";
+﻿import type { Activity, AiWeekPlan, AnalyticsDay, DailySummary, PlannedWorkout, TodayResponse } from "@health/shared";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
 
@@ -44,4 +44,18 @@ export async function fetchAnalytics(from: string, to: string): Promise<Analytic
   if (!res.ok) throw new Error(`Failed to load analytics (${res.status})`);
   const data = (await res.json()) as { days: AnalyticsDay[] };
   return data.days;
+}
+
+export async function fetchEvents(from: string, to: string): Promise<PlannedWorkout[]> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/events?from=${from}&to=${to}`,
+      { cache: "no-store" },
+    );
+    if (!res.ok) return [];
+    const data = (await res.json()) as { workouts: PlannedWorkout[] };
+    return data.workouts;
+  } catch {
+    return [];
+  }
 }
