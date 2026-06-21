@@ -1,4 +1,4 @@
-import type { AiDaySuggestion } from "@health/shared";
+﻿import type { AiDaySuggestion } from "@health/shared";
 import type { FastifyInstance } from "fastify";
 import { ingestWindow } from "../ingest/ingest";
 import { IntervalsClient } from "../intervals/client";
@@ -10,9 +10,10 @@ import { generateWeekSuggestions } from "../summary/suggestions";
 
 /** Routes that serve the frontend (SPEC §8, §9). */
 export async function registerSummaryRoutes(app: FastifyInstance): Promise<void> {
-  app.post("/api/ingest", async (_req, reply) => {
+  app.post<{ Body?: { days?: number } }>("/api/ingest", async (req, reply) => {
     try {
-      const result = await ingestWindow(7);
+      const days = Math.min(req.body?.days ?? 7, 365);
+      const result = await ingestWindow(days);
       // Regenerate today's summary so the dashboard reflects newly synced activities
       await generateDailySummary({ force: true }).catch((err) => {
         app.log.warn(err, "Summary regeneration failed after ingest");
