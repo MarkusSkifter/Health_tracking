@@ -1,4 +1,4 @@
-import type { AiDaySuggestion } from "@health/shared";
+﻿import type { AiDaySuggestion } from "@health/shared";
 import type { FastifyInstance } from "fastify";
 import { ingestWindow } from "../ingest/ingest";
 import { IntervalsClient } from "../intervals/client";
@@ -10,9 +10,10 @@ import { generateWeekSuggestions } from "../summary/suggestions";
 
 /** Routes that serve the frontend (SPEC §8, §9). */
 export async function registerSummaryRoutes(app: FastifyInstance): Promise<void> {
-  app.post("/api/ingest", async (_req, reply) => {
+  app.post<{ Body?: { days?: number } }>("/api/ingest", async (req, reply) => {
     try {
-      const result = await ingestWindow(7);
+      const days = Math.min(req.body?.days ?? 7, 365);
+      const result = await ingestWindow(days);
       // Regenerate today's summary so the dashboard reflects newly synced activities
       await generateDailySummary({ force: true }).catch((err) => {
         app.log.warn(err, "Summary regeneration failed after ingest");
@@ -62,6 +63,41 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
     } catch (err) {
       app.log.error(err, "Failed to fetch upcoming workouts");
       return reply.code(500).send({ error: "Failed to fetch upcoming workouts" });
+    }
+  });
+
+  app.get<{ Querystring: { from?: string; to?: string } }>("/api/events", async (req, reply) => {
+    try {
+      const now = new Date();
+      const y = now.getFullYear();
+      const mo = String(now.getMonth() + 1).padStart(2, "0");
+      const from = req.query.from ?? `${y}-${mo}-01`;
+      const to = req.query.to ?? `${y}-${mo}-${new Date(y, now.getMonth() + 1, 0).getDate()}`;
+      const { INTERVALS_API_KEY, INTERVALS_ATHLETE_ID } = intervalsEnv();
+      const client = new IntervalsClient({ apiKey: INTERVALS_API_KEY, athleteId: INTERVALS_ATHLETE_ID });
+      const { intervalsEventSchema } = await import("../intervals/types");
+      const SKIP_CATEGORIES = new Set(["NOTE", "HOLIDAY", "TARGET"]);
+      const raw = await client.getEvents(from, to);
+      const workouts = [];
+      for (const item of raw) {
+        const parsed = intervalsEventSchema.safeParse(item);
+        if (!parsed.success) continue;
+        const e = parsed.data;
+        if (e.category && SKIP_CATEGORIES.has(e.category)) continue;
+        if (!e.type && !e.name) continue;
+        workouts.push({
+          date: e.start_date_local.slice(0, 10),
+          name: e.name ?? e.type ?? "Workout",
+          type: e.type ?? null,
+          plannedDurationSec: e.moving_time ?? null,
+          plannedLoad: e.icu_training_load ?? null,
+          description: e.description ?? null,
+        });
+      }
+      return { workouts: workouts.sort((a: { date: string }, b: { date: string }) => a.date.localeCompare(b.date)) };
+    } catch (err) {
+      app.log.error(err, "Failed to fetch events");
+      return reply.code(500).send({ error: "Failed to fetch events" });
     }
   });
 
