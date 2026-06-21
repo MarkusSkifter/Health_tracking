@@ -9,18 +9,14 @@ export const revalidate = 60;
 type SearchParams = Promise<{ month?: string }>;
 
 function prevMonth(ym: string): string {
-  const parts = ym.split("-").map(Number);
-  const y = parts[0] ?? new Date().getFullYear();
-  const mo = parts[1] ?? new Date().getMonth() + 1;
-  const d = new Date(y, mo - 2, 1);
+  const [y, mo] = ym.split("-").map(Number);
+  const d = new Date((y ?? 2024), (mo ?? 1) - 2, 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function nextMonth(ym: string): string {
-  const parts = ym.split("-").map(Number);
-  const y = parts[0] ?? new Date().getFullYear();
-  const mo = parts[1] ?? new Date().getMonth() + 1;
-  const d = new Date(y, mo, 1);
+  const [y, mo] = ym.split("-").map(Number);
+  const d = new Date((y ?? 2024), (mo ?? 1), 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
@@ -36,7 +32,6 @@ function monthShort(ym: string): string {
   );
 }
 
-
 export default async function AnalyticsPage({
   searchParams,
 }: {
@@ -47,11 +42,11 @@ export default async function AnalyticsPage({
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const month = mp ?? thisMonth;
 
-  const parts = month.split("-").map(Number);
-  const year = parts[0] ?? now.getFullYear();
-  const m = parts[1] ?? now.getMonth() + 1;
+  const [y, m] = month.split("-").map(Number);
+  const year = y ?? now.getFullYear();
+  const mo = m ?? now.getMonth() + 1;
   const from = `${month}-01`;
-  const lastDay = new Date(year, m, 0).getDate();
+  const lastDay = new Date(year, mo, 0).getDate();
   const to = `${month}-${String(lastDay).padStart(2, "0")}`;
 
   let days: AnalyticsDay[] = [];
@@ -62,7 +57,7 @@ export default async function AnalyticsPage({
       fetchActivities(from, to),
     ]);
   } catch {
-    // empty state shown below
+    // show empty state
   }
 
   const prev = prevMonth(month);
@@ -70,49 +65,53 @@ export default async function AnalyticsPage({
   const isCurrentOrFuture = next > thisMonth;
 
   return (
-    <main className="flex flex-col gap-10">
-      {/* Header + month navigation */}
+    <main className="flex flex-col gap-8">
       <header className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-400">
-            Analytics
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Analytics</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
             {monthLabel(month)}
           </h1>
         </div>
-        <div className="flex items-center gap-1 text-sm">
+        <div className="flex items-center gap-0.5">
           <Link
             href={`/analytics?month=${prev}`}
-            className="rounded-lg px-3 py-1.5 text-neutral-500 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
+            className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-medium text-slate-400 transition-colors hover:bg-white hover:text-slate-700"
           >
-            ← {monthShort(prev)}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+            {monthShort(prev)}
           </Link>
           {!isCurrentOrFuture && (
             <Link
               href={`/analytics?month=${next}`}
-              className="rounded-lg px-3 py-1.5 text-neutral-500 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
+              className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-medium text-slate-400 transition-colors hover:bg-white hover:text-slate-700"
             >
-              {monthShort(next)} →
+              {monthShort(next)}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
             </Link>
           )}
         </div>
       </header>
 
       {days.length === 0 ? (
-        <p className="text-sm text-neutral-400">No data for {monthLabel(month)}.</p>
+        <div className="flex h-48 flex-col items-center justify-center gap-2 rounded-2xl border border-slate-100 bg-white text-center">
+          <p className="text-sm font-medium text-slate-400">No data for {monthLabel(month)}</p>
+          <p className="text-xs text-slate-300">Sync your account to import data</p>
+        </div>
       ) : (
         <>
-          {/* Chart grid — client component (avoids passing functions to server) */}
           <section>
             <AnalyticsCharts days={days} />
           </section>
 
-          {/* Daily data table — rows with activities are expandable */}
           <section>
-            <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-neutral-400">
-              Daily data
-            </h2>
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+              Daily log
+            </p>
             <AnalyticsDailyTable days={days} activityList={activityList} />
           </section>
         </>

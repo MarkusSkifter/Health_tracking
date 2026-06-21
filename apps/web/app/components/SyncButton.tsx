@@ -33,18 +33,18 @@ export function SyncButton() {
       <button
         onClick={handleSync}
         disabled={state === "syncing" || state === "done"}
-        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+        className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 ${
           state === "done"
             ? "bg-emerald-50 text-emerald-700"
             : state === "error"
-              ? "bg-rose-50 text-rose-700"
-              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+              ? "bg-rose-50 text-rose-600"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
         } disabled:opacity-50`}
       >
         {state === "idle" && "Sync now"}
         {state === "syncing" && "Syncing…"}
-        {state === "done" && "Synced ✓"}
-        {state === "error" && "Retry sync"}
+        {state === "done" && "Synced"}
+        {state === "error" && "Retry"}
       </button>
       {state === "error" && errorMsg && (
         <p className="text-xs text-rose-500">{errorMsg}</p>

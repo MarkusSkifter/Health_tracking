@@ -19,7 +19,7 @@ const CHARTS: Array<{
   {
     key: "trainingLoadDaily",
     title: "Training Load",
-    color: "#0a0a0a",
+    color: "#2563EB",
     unit: "",
     format: (v) => Math.round(v).toString(),
   },
@@ -33,28 +33,28 @@ const CHARTS: Array<{
   {
     key: "restingHr",
     title: "Resting HR",
-    color: "#e11d48",
+    color: "#E11D48",
     unit: " bpm",
     format: (v) => Math.round(v).toString(),
   },
   {
     key: "sleepSec",
     title: "Sleep",
-    color: "#7c3aed",
+    color: "#7C3AED",
     unit: "",
     format: formatSleep,
   },
   {
     key: "steps",
     title: "Steps",
-    color: "#d97706",
+    color: "#D97706",
     unit: "",
     format: (v) => Math.round(v).toLocaleString("en-GB"),
   },
   {
     key: "weightKg",
     title: "Weight",
-    color: "#64748b",
+    color: "#64748B",
     unit: " kg",
     format: (v) => v.toFixed(1),
   },
@@ -62,7 +62,7 @@ const CHARTS: Array<{
 
 export function AnalyticsCharts({ days }: { days: AnalyticsDay[] }) {
   return (
-    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {CHARTS.map((c) => {
         const data = days.map((d) => ({
           date: d.date,
@@ -80,15 +80,15 @@ export function AnalyticsCharts({ days }: { days: AnalyticsDay[] }) {
         return (
           <div
             key={String(c.key)}
-            className="rounded-2xl border border-neutral-100 bg-white p-5"
+            className="rounded-2xl border border-slate-100 bg-white p-5"
           >
-            <div className="mb-3 flex items-baseline justify-between">
-              <p className="text-xs font-medium uppercase tracking-wider text-neutral-400">
+            <div className="mb-4 flex items-baseline justify-between">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
                 {c.title}
               </p>
               <p
-                className="text-base font-semibold tabular-nums"
-                style={{ color: latest !== undefined ? c.color : "#d4d4d4" }}
+                className="text-base font-bold tabular-nums"
+                style={{ color: latest !== undefined ? c.color : "#CBD5E1" }}
               >
                 {latestFormatted}
               </p>
@@ -96,7 +96,7 @@ export function AnalyticsCharts({ days }: { days: AnalyticsDay[] }) {
             <LineChart
               data={data}
               color={c.color}
-              height={90}
+              height={80}
               format={c.format}
               unit={c.unit}
             />
