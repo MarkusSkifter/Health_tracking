@@ -68,7 +68,7 @@ export function parseWorkout(description: string): Block[] {
 
   let i = 0;
   while (i < lines.length) {
-    const line = lines[i];
+    const line = lines[i] ?? "";
 
     // "8x" on its own line — collect following "- ..." sub-lines
     const repeatLineMatch = line.match(/^(\d+)\s*[xX]$/);
