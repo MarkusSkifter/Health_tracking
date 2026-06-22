@@ -52,11 +52,11 @@ export function SideNav() {
   }
 
   return (
-    <nav className="fixed left-0 top-0 hidden h-dvh w-60 flex-col border-r border-slate-100 bg-white md:flex">
+    <nav className="fixed left-0 top-0 hidden h-dvh w-60 flex-col border-r border-[#e4ddd2] bg-[#ede8df] md:flex">
       {/* Branding */}
       <div className="px-6 pt-8 pb-8">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#b07d3a]">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
             </svg>
@@ -79,8 +79,8 @@ export function SideNav() {
                 href={item.href}
                 className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                   active
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                    ? "bg-[#b07d3a] text-white shadow-sm"
+                    : "text-slate-600 hover:bg-[#e4ddd2] hover:text-slate-900"
                 }`}
               >
                 <span className={active ? "text-white" : ""}>{item.icon}</span>
@@ -95,7 +95,7 @@ export function SideNav() {
       <div className="px-3 pb-6">
         <button
           onClick={logout}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-all duration-150 hover:bg-slate-50 hover:text-slate-700"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-all duration-150 hover:bg-[#e4ddd2] hover:text-slate-700"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
             <path d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />

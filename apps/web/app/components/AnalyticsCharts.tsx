@@ -19,7 +19,7 @@ const CHARTS: Array<{
   {
     key: "trainingLoadDaily",
     title: "Training Load",
-    color: "#2563EB",
+    color: "#b07d3a",
     unit: "",
     format: (v) => Math.round(v).toString(),
   },
@@ -40,7 +40,7 @@ const CHARTS: Array<{
   {
     key: "sleepSec",
     title: "Sleep",
-    color: "#7C3AED",
+    color: "#9c6b3f",
     unit: "",
     format: formatSleep,
   },
@@ -54,7 +54,7 @@ const CHARTS: Array<{
   {
     key: "weightKg",
     title: "Weight",
-    color: "#64748B",
+    color: "#897a68",
     unit: " kg",
     format: (v) => v.toFixed(1),
   },
@@ -88,7 +88,7 @@ export function AnalyticsCharts({ days }: { days: AnalyticsDay[] }) {
               </p>
               <p
                 className="text-base font-bold tabular-nums"
-                style={{ color: latest !== undefined ? c.color : "#CBD5E1" }}
+                style={{ color: latest !== undefined ? c.color : "#d3c8b8" }}
               >
                 {latestFormatted}
               </p>
