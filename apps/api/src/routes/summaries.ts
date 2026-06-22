@@ -1,9 +1,13 @@
 ﻿import type { AiDaySuggestion } from "@health/shared";
 import type { FastifyInstance } from "fastify";
+import { eq } from "drizzle-orm";
 import { ingestWindow } from "../ingest/ingest";
 import { IntervalsClient } from "../intervals/client";
 import { fetchUpcomingWorkouts } from "../intervals/upcoming";
 import { intervalsEnv } from "../env";
+import { db } from "../db/client";
+import { userSettings } from "../db/schema";
+import { getOrCreateUserId } from "../ingest/store";
 import { getActivities, getAnalytics, getHistory, getToday } from "../summary/queries";
 import { generateDailySummary } from "../summary/generate";
 import { generateWeekSuggestions } from "../summary/suggestions";
@@ -87,6 +91,7 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
         if (e.category && SKIP_CATEGORIES.has(e.category)) continue;
         if (!e.type && !e.name) continue;
         workouts.push({
+          id: e.id ?? null,
           date: e.start_date_local.slice(0, 10),
           name: e.name ?? e.type ?? "Workout",
           type: e.type ?? null,
@@ -121,6 +126,50 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
       const msg = err instanceof Error ? err.message : "Failed to create workout";
       app.log.error(err, "Failed to create workout");
       return reply.code(500).send({ error: msg });
+    }
+  });
+
+  app.delete<{ Params: { id: string } }>("/api/events/:id", async (req, reply) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      if (isNaN(eventId)) return reply.code(400).send({ error: "Invalid event id" });
+      const { INTERVALS_API_KEY, INTERVALS_ATHLETE_ID } = intervalsEnv();
+      const client = new IntervalsClient({ apiKey: INTERVALS_API_KEY, athleteId: INTERVALS_ATHLETE_ID });
+      await client.deleteEvent(eventId);
+      return { ok: true };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete event";
+      app.log.error(err, "Failed to delete event");
+      return reply.code(500).send({ error: msg });
+    }
+  });
+
+  app.get("/api/settings", async (_req, reply) => {
+    try {
+      const userId = await getOrCreateUserId();
+      const rows = await db.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1);
+      const row = rows[0];
+      return { ftpWatts: row?.ftpWatts ?? null, runThresholdSec: row?.runThresholdSec ?? null };
+    } catch (err) {
+      app.log.error(err, "Failed to fetch settings");
+      return reply.code(500).send({ error: "Failed to fetch settings" });
+    }
+  });
+
+  app.put<{ Body: { ftpWatts?: number | null; runThresholdSec?: number | null } }>("/api/settings", async (req, reply) => {
+    try {
+      const userId = await getOrCreateUserId();
+      const { ftpWatts, runThresholdSec } = req.body;
+      await db.insert(userSettings)
+        .values({ userId, ftpWatts: ftpWatts ?? null, runThresholdSec: runThresholdSec ?? null, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: userSettings.userId,
+          set: { ftpWatts: ftpWatts ?? null, runThresholdSec: runThresholdSec ?? null, updatedAt: new Date() },
+        });
+      return { ok: true };
+    } catch (err) {
+      app.log.error(err, "Failed to save settings");
+      return reply.code(500).send({ error: "Failed to save settings" });
     }
   });
 

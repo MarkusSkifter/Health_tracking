@@ -3,6 +3,7 @@
 import type { Activity, PlannedWorkout } from "@health/shared";
 import { useState } from "react";
 import { CalendarGrid } from "./CalendarGrid";
+import { DeleteWorkoutButton } from "./DeleteWorkoutButton";
 import { WorkoutBars } from "./WorkoutBars";
 
 const TYPE_CHIP: Record<string, { bg: string; text: string }> = {
@@ -242,7 +243,18 @@ export function ExpandableCalendar({
                       </span>
                       <span className="text-xs font-medium text-slate-800">{w.name}</span>
                       {fmtMin(w.plannedDurationSec) && (
-                        <span className="ml-auto text-xs text-slate-400">{fmtMin(w.plannedDurationSec)}</span>
+                        <span className="text-xs text-slate-400">{fmtMin(w.plannedDurationSec)}</span>
+                      )}
+                      {w.id != null && (
+                        <span className="ml-auto">
+                          <DeleteWorkoutButton
+                            eventId={w.id}
+                            onDeleted={() => {
+                              setStripSelected(null);
+                              window.location.reload();
+                            }}
+                          />
+                        </span>
                       )}
                     </div>
                     {w.description && <WorkoutBars description={w.description} />}

@@ -72,6 +72,21 @@ export class IntervalsClient {
     });
   }
 
+  /** Delete a calendar event by its intervals.icu numeric id. */
+  async deleteEvent(eventId: number): Promise<void> {
+    const url = new URL(`${this.baseUrl}/api/v1/athlete/${this.athleteId}/events/${eventId}`);
+    const res = await fetch(url, {
+      method: "DELETE",
+      headers: { Authorization: this.authHeader, Accept: "application/json" },
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(
+        `intervals.icu ${res.status} ${res.statusText}` + (body ? `: ${body.slice(0, 300)}` : ""),
+      );
+    }
+  }
+
   /** Create a calendar event (planned workout). */
   async createEvent(event: {
     start_date_local: string;

@@ -3,7 +3,7 @@ import { SUMMARY_MODEL } from "@health/shared";
 import Anthropic from "@anthropic-ai/sdk";
 import { and, between, desc, eq } from "drizzle-orm";
 import { db } from "../db/client";
-import { activities, dailySummary, wellness } from "../db/schema";
+import { activities, dailySummary, userSettings, wellness } from "../db/schema";
 import { anthropicEnv } from "../env";
 import { ATHLETE_TIMEZONE, isoDateInTimeZone } from "../intervals/dates";
 import { getOrCreateUserId } from "../ingest/store";
@@ -63,7 +63,7 @@ export async function generateWeekSuggestions(): Promise<AiWeekPlan> {
   try {
     const userId = await getOrCreateUserId();
 
-    const [latestRows, recentWellness, recentActs] = await Promise.all([
+    const [latestRows, recentWellness, recentActs, settingsRows] = await Promise.all([
       db.select().from(dailySummary)
         .where(eq(dailySummary.userId, userId))
         .orderBy(desc(dailySummary.date))
@@ -74,6 +74,7 @@ export async function generateWeekSuggestions(): Promise<AiWeekPlan> {
       db.select().from(activities)
         .where(and(eq(activities.userId, userId), between(activities.date, addDays(today, -13), today)))
         .orderBy(desc(activities.date)),
+      db.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1),
     ]);
 
     const s = latestRows[0];
@@ -81,6 +82,9 @@ export async function generateWeekSuggestions(): Promise<AiWeekPlan> {
       tsb = Math.round(s.load7d - s.load28d);
       acr = s.acuteChronicRatio;
     }
+    const cfg = settingsRows[0];
+    const ftpWatts = cfg?.ftpWatts ?? null;
+    const runThresholdSec = cfg?.runThresholdSec ?? null;
 
     const dates = Array.from({ length: 7 }, (_, i) => addDays(today, i));
 
@@ -111,6 +115,8 @@ export async function generateWeekSuggestions(): Promise<AiWeekPlan> {
         " TSB=" + tsb + " (" + state + ")" +
         " ACR=" + s.acuteChronicRatio.toFixed(2) + "\n"
       ) : "") +
+      (ftpWatts ? "Cycling FTP: " + ftpWatts + "W\n" : "") +
+      (runThresholdSec ? "Run threshold pace: " + Math.floor(runThresholdSec / 60) + ":" + String(runThresholdSec % 60).padStart(2, "0") + "/km\n" : "") +
       (hrvLines ? "HRV trend: " + hrvLines + "\n" : "") +
       (actLines ? "Recent sessions: " + actLines + "\n" : "") +
       "\nDates: " + dates.join(", ") + "\n\n" +

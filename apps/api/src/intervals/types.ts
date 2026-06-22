@@ -32,6 +32,7 @@ export const intervalsWellnessSchema = z.object({
 });
 
 export const intervalsEventSchema = z.object({
+  id: z.number().nullish(),
   start_date_local: z.string(),
   name: z.string().nullish(),
   type: z.string().nullish(),
