@@ -108,6 +108,7 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
       const client = new IntervalsClient({ apiKey: INTERVALS_API_KEY, athleteId: INTERVALS_ATHLETE_ID });
       await client.createEvent({
         start_date_local: `${date}T08:00:00`,
+        category: "WORKOUT",
         name,
         type: type || undefined,
         moving_time: durationMin ? durationMin * 60 : undefined,
@@ -116,8 +117,9 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
       });
       return { ok: true };
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to create workout";
       app.log.error(err, "Failed to create workout");
-      return reply.code(500).send({ error: "Failed to create workout" });
+      return reply.code(500).send({ error: msg });
     }
   });
 

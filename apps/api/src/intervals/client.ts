@@ -76,6 +76,7 @@ export class IntervalsClient {
   async createEvent(event: {
     start_date_local: string;
     name: string;
+    category?: string;
     type?: string;
     moving_time?: number | null;
     icu_training_load?: number;

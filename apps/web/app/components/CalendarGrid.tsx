@@ -68,10 +68,13 @@ function AddWorkoutForm({ date, onCancel, onSaved }: { date: string; onCancel: (
           description: description.trim() || undefined,
         }),
       });
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? `Error ${res.status}`);
+      }
       onSaved();
-    } catch {
-      setError("Failed to save. Please try again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save. Please try again.");
       setSaving(false);
     }
   }
