@@ -5,20 +5,29 @@ import { useState } from "react";
 
 export function AcceptButton({ day }: { day: AiDaySuggestion }) {
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [errMsg, setErrMsg] = useState("");
 
   async function handleAccept() {
     setState("loading");
+    setErrMsg("");
     try {
       const res = await fetch("/api/calendar/event", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(day),
       });
-      setState(res.ok ? "done" : "error");
-      if (!res.ok) setTimeout(() => setState("idle"), 3000);
-    } catch {
+      if (res.ok) {
+        setState("done");
+      } else {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        setErrMsg(body.error ?? `Error ${res.status}`);
+        setState("error");
+        setTimeout(() => setState("idle"), 5000);
+      }
+    } catch (err) {
+      setErrMsg(err instanceof Error ? err.message : "Network error");
       setState("error");
-      setTimeout(() => setState("idle"), 3000);
+      setTimeout(() => setState("idle"), 5000);
     }
   }
 
@@ -31,12 +40,17 @@ export function AcceptButton({ day }: { day: AiDaySuggestion }) {
   }
 
   return (
-    <button
-      onClick={handleAccept}
-      disabled={state === "loading"}
-      className="rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition-all duration-150 hover:bg-blue-700 disabled:opacity-40"
-    >
-      {state === "loading" ? "Adding…" : state === "error" ? "Retry" : "Accept"}
-    </button>
+    <div className="flex flex-col items-end gap-1">
+      <button
+        onClick={handleAccept}
+        disabled={state === "loading"}
+        className="rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition-all duration-150 hover:bg-blue-700 disabled:opacity-40"
+      >
+        {state === "loading" ? "Adding…" : state === "error" ? "Retry" : "Accept"}
+      </button>
+      {state === "error" && errMsg && (
+        <p className="max-w-[200px] text-right text-[10px] leading-tight text-rose-500">{errMsg}</p>
+      )}
+    </div>
   );
 }

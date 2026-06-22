@@ -130,6 +130,7 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
       const client = new IntervalsClient({ apiKey: INTERVALS_API_KEY, athleteId: INTERVALS_ATHLETE_ID });
       await client.createEvent({
         start_date_local: day.date + "T08:00:00",
+        category: "WORKOUT",
         name: day.name,
         type: day.type && day.type !== "Rest" ? day.type : undefined,
         moving_time: day.plannedDurationSec ?? undefined,
@@ -138,8 +139,9 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
       });
       return { ok: true };
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to create event";
       app.log.error(err, "Failed to create calendar event");
-      return reply.code(500).send({ error: "Failed to create event" });
+      return reply.code(500).send({ error: msg });
     }
   });
 }
