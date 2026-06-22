@@ -254,6 +254,7 @@ function SuggestionCard({ day: d }: { day: AiDaySuggestion }) {
           {d.name}
         </p>
         <p className="mt-0.5 text-xs leading-relaxed text-slate-400">{d.rationale}</p>
+        {!isRest && d.description && <WorkoutBars description={d.description} />}
       </div>
       {!isRest && (
         <div className="flex shrink-0 flex-col items-end gap-2">
@@ -266,11 +267,6 @@ function SuggestionCard({ day: d }: { day: AiDaySuggestion }) {
             )}
           </div>
           <AcceptButton day={d} />
-        </div>
-      )}
-      {!isRest && d.description && (
-        <div className="mt-1 w-full pl-[52px]">
-          <WorkoutBars description={d.description} />
         </div>
       )}
     </div>
