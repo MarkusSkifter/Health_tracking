@@ -1,11 +1,18 @@
 type Zone = 1 | 2 | 3 | 4 | 5;
 
 const ZONE_BG: Record<Zone, string> = {
-  1: "#e4ddd2", 2: "#D1FAE5", 3: "#FEF3C7", 4: "#FFEDD5", 5: "#FEE2E2",
+  1: "rgba(55,138,221,0.28)",
+  2: "rgba(29,158,117,0.28)",
+  3: "rgba(251,191,36,0.28)",
+  4: "rgba(251,146,60,0.28)",
+  5: "rgba(248,113,113,0.28)",
 };
 const ZONE_TEXT: Record<Zone, string> = {
-  1: "text-slate-500", 2: "text-emerald-600", 3: "text-amber-600",
-  4: "text-orange-500", 5: "text-rose-500",
+  1: "#6BAEE8",
+  2: "#5DCAA5",
+  3: "#FCD34D",
+  4: "#FB923C",
+  5: "#F87171",
 };
 const ZONE_LABEL: Record<Zone, string> = { 1: "Z1", 2: "Z2", 3: "Z3", 4: "Z4", 5: "Z5" };
 
@@ -20,19 +27,15 @@ function pctToZone(avg: number): Zone {
 }
 
 function extractMinutes(text: string): number | null {
-  // "1h30m" or "1h"
   const hMatch = text.match(/(\d+)\s*h\s*(\d+)?/i);
   if (hMatch?.[1]) return parseInt(hMatch[1]) * 60 + (hMatch[2] ? parseInt(hMatch[2]) : 0);
 
-  // "40min" or standalone "40m" (not followed by ore letters)
   const minMatch = text.match(/(\d+)\s*min/i) ?? text.match(/(\d+)\s*m\b/);
   if (minMatch?.[1]) return parseInt(minMatch[1]);
 
-  // "10s" or "10sec" -> convert to fractional minutes (min 0.5 for bar visibility)
   const secMatch = text.match(/(\d+)\s*s(?:ec)?\b/i);
   if (secMatch?.[1]) return Math.max(0.5, parseInt(secMatch[1]) / 60);
 
-  // "8:00" MM:SS -> minutes
   const timeMatch = text.match(/(\d{1,3}):(\d{2})/);
   if (timeMatch?.[1]) return parseInt(timeMatch[1]);
 
@@ -40,7 +43,6 @@ function extractMinutes(text: string): number | null {
 }
 
 function extractZone(text: string): Zone {
-  // "50-60%", "300%", "105%"
   const pctMatch = text.match(/(\d+)(?:\s*[-]\s*(\d+))?\s*%/);
   if (pctMatch?.[1]) {
     const lo = parseInt(pctMatch[1]);
@@ -70,7 +72,6 @@ export function parseWorkout(description: string): Block[] {
   while (i < lines.length) {
     const line = lines[i] ?? "";
 
-    // "8x" on its own line — collect following "- ..." sub-lines
     const repeatLineMatch = line.match(/^(\d+)\s*[xX]$/);
     if (repeatLineMatch?.[1]) {
       const reps = parseInt(repeatLineMatch[1]);
@@ -85,7 +86,6 @@ export function parseWorkout(description: string): Block[] {
       continue;
     }
 
-    // "3x(8min Z5, 3min Z1)" inline repeat
     const inlineRepeat = line.match(/^(\d+)\s*[xX]\s*\((.+)\)$/);
     if (inlineRepeat?.[1] && inlineRepeat[2]) {
       const reps = parseInt(inlineRepeat[1]);
@@ -99,7 +99,6 @@ export function parseWorkout(description: string): Block[] {
       continue;
     }
 
-    // Plain or "- content" line
     const b = parseLine(line);
     if (b) blocks.push(b);
     i++;
@@ -138,11 +137,11 @@ export function WorkoutBars({ description }: { description: string }) {
         {(Object.entries(zoneSummary) as [string, number][])
           .sort(([a], [b]) => Number(a) - Number(b))
           .map(([z, mins]) => (
-            <span key={z} className={`text-[10px] font-semibold tabular-nums ${ZONE_TEXT[Number(z) as Zone]}`}>
+            <span key={z} className="text-[10px] font-semibold tabular-nums" style={{ color: ZONE_TEXT[Number(z) as Zone] }}>
               {ZONE_LABEL[Number(z) as Zone]} {Math.round(mins)}min
             </span>
           ))}
-        <span className="ml-auto text-[10px] text-slate-300">{Math.round(total)}min</span>
+        <span className="ml-auto text-[10px]" style={{ color: "rgba(255,255,255,0.2)" }}>{Math.round(total)}min</span>
       </div>
     </div>
   );

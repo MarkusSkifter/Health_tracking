@@ -17,7 +17,7 @@ interface LineChartProps {
 
 export function LineChart({
   data,
-  color = "#0a0a0a",
+  color = "#5DCAA5",
   height = 80,
   format,
   unit = "",
@@ -34,7 +34,7 @@ export function LineChart({
         role="img"
         aria-label="No data available"
       >
-        <p className="text-xs text-slate-300">No data</p>
+        <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>No data</p>
       </div>
     );
   }
@@ -60,7 +60,6 @@ export function LineChart({
     return { x, y, date: d.date, value: d.value };
   });
 
-  // SVG path with gaps wherever value is null
   let pathD = "";
   let inLine = false;
   for (const p of positions) {
@@ -98,7 +97,7 @@ export function LineChart({
             x2={px + cw}
             y1={py + ch * (1 - t)}
             y2={py + ch * (1 - t)}
-            stroke="#ede8df"
+            stroke="rgba(255,255,255,0.05)"
             strokeWidth="1"
           />
         ))}
@@ -110,6 +109,7 @@ export function LineChart({
             fill="none"
             stroke={color}
             strokeWidth="1.5"
+            strokeOpacity="0.7"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -123,7 +123,7 @@ export function LineChart({
               x2={hoveredPt.x.toFixed(1)}
               y1={py}
               y2={py + ch}
-              stroke="#e4ddd2"
+              stroke="rgba(255,255,255,0.12)"
               strokeWidth="1"
             />
             <circle
@@ -165,10 +165,10 @@ export function LineChart({
       </svg>
 
       {/* Axis / tooltip row */}
-      <div className="mt-1 flex justify-between text-xs text-slate-400">
+      <div className="mt-1 flex justify-between text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
         <span>{mmdd(data[0]!.date)}</span>
         {hoveredPt ? (
-          <span className="font-medium text-slate-700">
+          <span className="font-medium" style={{ color: "rgba(255,255,255,0.7)" }}>
             {mmdd(hoveredPt.date)}
             {hoveredPt.value !== null
               ? ` · ${fmt(hoveredPt.value)}${unit}`

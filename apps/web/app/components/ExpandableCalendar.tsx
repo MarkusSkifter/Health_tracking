@@ -7,16 +7,16 @@ import { DeleteWorkoutButton } from "./DeleteWorkoutButton";
 import { WorkoutBars } from "./WorkoutBars";
 
 const TYPE_CHIP: Record<string, { bg: string; text: string }> = {
-  Run: { bg: "bg-emerald-50", text: "text-emerald-700" },
-  VirtualRun: { bg: "bg-emerald-50", text: "text-emerald-700" },
-  Ride: { bg: "bg-amber-50", text: "text-amber-700" },
-  VirtualRide: { bg: "bg-amber-50", text: "text-amber-700" },
-  Swim: { bg: "bg-blue-50", text: "text-blue-700" },
-  Walk: { bg: "bg-teal-50", text: "text-teal-700" },
+  Run:        { bg: "rgba(29,158,117,0.18)",  text: "#5DCAA5" },
+  VirtualRun: { bg: "rgba(29,158,117,0.18)",  text: "#5DCAA5" },
+  Ride:       { bg: "rgba(251,191,36,0.18)",  text: "#FCD34D" },
+  VirtualRide:{ bg: "rgba(251,191,36,0.18)",  text: "#FCD34D" },
+  Swim:       { bg: "rgba(55,138,221,0.18)",  text: "#6BAEE8" },
+  Walk:       { bg: "rgba(93,202,165,0.18)",  text: "#5DCAA5" },
 };
 
 function chipStyle(type: string | null) {
-  return TYPE_CHIP[type ?? ""] ?? { bg: "bg-slate-100", text: "text-slate-600" };
+  return TYPE_CHIP[type ?? ""] ?? { bg: "rgba(255,255,255,0.08)", text: "rgba(255,255,255,0.5)" };
 }
 
 function fmtMin(sec: number | null): string | null {
@@ -56,16 +56,16 @@ async function fetchMonthData(y: number, m: number) {
 }
 
 const TYPE_DOT: Record<string, string> = {
-  Ride: "bg-amber-400",
-  VirtualRide: "bg-amber-400",
-  Run: "bg-emerald-500",
-  VirtualRun: "bg-emerald-500",
-  Swim: "bg-blue-400",
-  Walk: "bg-teal-400",
+  Ride:        "#FCD34D",
+  VirtualRide: "#FCD34D",
+  Run:         "#5DCAA5",
+  VirtualRun:  "#5DCAA5",
+  Swim:        "#6BAEE8",
+  Walk:        "#5DCAA5",
 };
 
-function activityDot(type: string | null) {
-  return TYPE_DOT[type ?? ""] ?? "bg-slate-400";
+function activityDotColor(type: string | null) {
+  return TYPE_DOT[type ?? ""] ?? "rgba(255,255,255,0.35)";
 }
 
 export function ExpandableCalendar({
@@ -90,8 +90,7 @@ export function ExpandableCalendar({
   const today = new Date().toISOString().slice(0, 10);
   const todayDate = new Date();
 
-  // Build strip: Monday of current week → Sunday
-  const dayOfWeek = (todayDate.getDay() + 6) % 7; // Mon=0
+  const dayOfWeek = (todayDate.getDay() + 6) % 7;
   const monday = new Date(todayDate);
   monday.setDate(todayDate.getDate() - dayOfWeek);
 
@@ -137,14 +136,15 @@ export function ExpandableCalendar({
   return (
     <div>
       {/* 7-day strip */}
-      <div className="rounded-2xl border border-slate-100 bg-white p-4">
+      <div className="glass-card rounded-2xl p-4">
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
             This week
           </p>
           <button
             onClick={toggle}
-            className="flex items-center gap-1 text-xs font-medium text-blue-600 transition-colors hover:text-blue-700"
+            className="flex items-center gap-1 text-xs font-medium transition-colors"
+            style={{ color: "#5DCAA5" }}
           >
             {isExpanded ? (
               <>
@@ -174,34 +174,48 @@ export function ExpandableCalendar({
             const planned = plannedByDate.get(iso) ?? [];
             const hasDone = acts.length > 0;
             const hasPlanned = planned.length > 0;
-
             const isSelected = iso === stripSelected;
+
+            let bgStyle: React.CSSProperties = {};
+            if (isToday) bgStyle = { background: "linear-gradient(135deg, #1D9E75, #2A7FC0)" };
+            else if (isSelected) bgStyle = { background: "rgba(93,202,165,0.12)" };
+            else if (isPast && hasDone) bgStyle = { background: "rgba(255,255,255,0.05)" };
+
             return (
               <button
                 key={iso}
                 onClick={() => setStripSelected(isSelected ? null : iso)}
-                className={`flex flex-col items-center gap-1.5 rounded-xl py-3 px-1 transition-colors ${
-                  isToday
-                    ? "bg-blue-600"
-                    : isSelected
-                      ? "bg-slate-100"
-                      : isPast && hasDone
-                        ? "bg-slate-50 hover:bg-slate-100"
-                        : "hover:bg-slate-50"
-                }`}
+                className="flex flex-col items-center gap-1.5 rounded-xl py-3 px-1 transition-colors"
+                style={bgStyle}
+                onMouseEnter={(e) => {
+                  if (!isToday && !isSelected) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)";
+                }}
+                onMouseLeave={(e) => {
+                  if (!isToday && !isSelected) (e.currentTarget as HTMLElement).style.background = isPast && hasDone ? "rgba(255,255,255,0.05)" : "transparent";
+                }}
               >
-                <span className={`text-[10px] font-medium uppercase tracking-wide ${isToday ? "text-blue-200" : "text-slate-400"}`}>
+                <span
+                  className="text-[10px] font-medium uppercase tracking-wide"
+                  style={{ color: isToday ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.35)" }}
+                >
                   {DAY_ABBR[d.getDay()]}
                 </span>
-                <span className={`text-sm font-semibold tabular-nums ${isToday ? "text-white" : isPast ? "text-slate-500" : "text-slate-800"}`}>
+                <span
+                  className="text-sm font-semibold tabular-nums"
+                  style={{ color: isToday ? "#fff" : isPast ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.75)" }}
+                >
                   {d.getDate()}
                 </span>
                 <div className="flex h-3 items-center justify-center gap-0.5">
                   {hasDone && acts.slice(0, 2).map((a, idx2) => (
-                    <span key={idx2} className={`h-1.5 w-1.5 rounded-full ${isToday ? "bg-blue-300" : activityDot(a.type)}`} />
+                    <span
+                      key={idx2}
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ backgroundColor: isToday ? "rgba(255,255,255,0.7)" : activityDotColor(a.type) }}
+                    />
                   ))}
                   {!hasDone && hasPlanned && (
-                    <span className="h-1.5 w-1.5 rounded-full border border-dashed border-violet-400" />
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ border: "1px dashed #5DCAA5" }} />
                   )}
                 </div>
               </button>
@@ -217,20 +231,27 @@ export function ExpandableCalendar({
             weekday: "long", day: "numeric", month: "long",
           }).format(new Date(`${stripSelected}T00:00:00`));
           return (
-            <div className="mt-3 border-t border-slate-100 pt-3">
-              <p className="mb-2.5 text-xs font-semibold text-slate-700">{label}</p>
+            <div className="mt-3 pt-3" style={{ borderTop: "0.5px solid rgba(255,255,255,0.08)" }}>
+              <p className="mb-2.5 text-xs font-semibold text-white">{label}</p>
               {dayActs.length === 0 && dayPlan.length === 0 && (
-                <p className="text-xs text-slate-400">No activity recorded.</p>
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>No activity recorded.</p>
               )}
               <div className="flex flex-col gap-2">
                 {dayActs.map((a) => {
                   const c = chipStyle(a.type);
                   return (
                     <div key={a.intervalsActivityId} className="flex items-center gap-2">
-                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${c.bg} ${c.text}`}>{a.type}</span>
-                      {a.durationSec && <span className="text-xs text-slate-500">{fmtMin(a.durationSec)}</span>}
+                      <span
+                        className="rounded px-1.5 py-0.5 text-[10px] font-semibold"
+                        style={{ background: c.bg, color: c.text }}
+                      >
+                        {a.type}
+                      </span>
+                      {a.durationSec && (
+                        <span className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>{fmtMin(a.durationSec)}</span>
+                      )}
                       {a.trainingLoad != null && (
-                        <span className="ml-auto text-xs text-slate-400">load {Math.round(a.trainingLoad)}</span>
+                        <span className="ml-auto text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>load {Math.round(a.trainingLoad)}</span>
                       )}
                     </div>
                   );
@@ -238,12 +259,15 @@ export function ExpandableCalendar({
                 {dayPlan.map((w) => (
                   <div key={`${w.date}-${w.name}`}>
                     <div className="flex items-center gap-2">
-                      <span className="rounded border border-dashed border-violet-300 bg-violet-50 px-1.5 py-0.5 text-[10px] font-semibold text-violet-600">
+                      <span
+                        className="rounded px-1.5 py-0.5 text-[10px] font-semibold"
+                        style={{ border: "0.5px dashed rgba(93,202,165,0.5)", background: "rgba(93,202,165,0.08)", color: "#5DCAA5" }}
+                      >
                         {w.type ?? "Workout"}
                       </span>
-                      <span className="text-xs font-medium text-slate-800">{w.name}</span>
+                      <span className="text-xs font-medium text-white">{w.name}</span>
                       {fmtMin(w.plannedDurationSec) && (
-                        <span className="text-xs text-slate-400">{fmtMin(w.plannedDurationSec)}</span>
+                        <span className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>{fmtMin(w.plannedDurationSec)}</span>
                       )}
                       {w.id != null && (
                         <span className="ml-auto">
@@ -266,18 +290,21 @@ export function ExpandableCalendar({
       {/* Expandable full calendar */}
       <div className={`cal-expand${isExpanded ? " open" : ""} mt-2`}>
         <div className="cal-inner">
-          <div className="rounded-2xl border border-slate-100 bg-white p-4 pt-5">
+          <div className="glass-card rounded-2xl p-4 pt-5">
             {/* Month navigation */}
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">
+              <h2 className="text-base font-semibold text-white">
                 {MONTH_NAMES[(calMonth - 1)]} {calYear}
               </h2>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => navigateMonth(-1)}
                   disabled={loading}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700 disabled:opacity-40"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors disabled:opacity-40"
+                  style={{ color: "rgba(255,255,255,0.4)" }}
                   aria-label={`Go to ${MONTH_NAMES[(prevM - 1)]} ${prevY}`}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.8)"; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.06)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.4)"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -286,8 +313,11 @@ export function ExpandableCalendar({
                 <button
                   onClick={() => navigateMonth(1)}
                   disabled={loading || isCurrentOrFuture}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700 disabled:opacity-40"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors disabled:opacity-40"
+                  style={{ color: "rgba(255,255,255,0.4)" }}
                   aria-label={`Go to ${MONTH_NAMES[(nextM - 1)]} ${nextY}`}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.8)"; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.06)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.4)"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -297,7 +327,7 @@ export function ExpandableCalendar({
             </div>
 
             {loading ? (
-              <div className="flex h-64 items-center justify-center text-sm text-slate-400">
+              <div className="flex h-64 items-center justify-center text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
                 Loading…
               </div>
             ) : (

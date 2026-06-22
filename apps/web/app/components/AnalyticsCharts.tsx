@@ -19,42 +19,42 @@ const CHARTS: Array<{
   {
     key: "trainingLoadDaily",
     title: "Training Load",
-    color: "#b07d3a",
+    color: "#5DCAA5",
     unit: "",
     format: (v) => Math.round(v).toString(),
   },
   {
     key: "hrv",
     title: "HRV",
-    color: "#059669",
+    color: "#5DCAA5",
     unit: " ms",
     format: (v) => Math.round(v).toString(),
   },
   {
     key: "restingHr",
     title: "Resting HR",
-    color: "#E11D48",
+    color: "#F87171",
     unit: " bpm",
     format: (v) => Math.round(v).toString(),
   },
   {
     key: "sleepSec",
     title: "Sleep",
-    color: "#9c6b3f",
+    color: "#C084FC",
     unit: "",
     format: formatSleep,
   },
   {
     key: "steps",
     title: "Steps",
-    color: "#D97706",
+    color: "#FCD34D",
     unit: "",
     format: (v) => Math.round(v).toLocaleString("en-GB"),
   },
   {
     key: "weightKg",
     title: "Weight",
-    color: "#897a68",
+    color: "rgba(255,255,255,0.45)",
     unit: " kg",
     format: (v) => v.toFixed(1),
   },
@@ -80,15 +80,15 @@ export function AnalyticsCharts({ days }: { days: AnalyticsDay[] }) {
         return (
           <div
             key={String(c.key)}
-            className="rounded-2xl border border-slate-100 bg-white p-5"
+            className="glass-card rounded-2xl p-5"
           >
             <div className="mb-4 flex items-baseline justify-between">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+              <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
                 {c.title}
               </p>
               <p
                 className="text-base font-bold tabular-nums"
-                style={{ color: latest !== undefined ? c.color : "#d3c8b8" }}
+                style={{ color: latest !== undefined ? c.color : "rgba(255,255,255,0.15)" }}
               >
                 {latestFormatted}
               </p>

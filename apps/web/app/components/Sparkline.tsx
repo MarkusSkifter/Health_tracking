@@ -34,13 +34,14 @@ export function Sparkline({
     >
       <polyline
         fill="none"
-        stroke="#b07d3a"
-        strokeWidth="2.25"
+        stroke="#5DCAA5"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
+        strokeOpacity="0.45"
         points={points.join(" ")}
       />
-      <circle cx={lastX.toFixed(1)} cy={lastY.toFixed(1)} r="3.25" fill="#b07d3a" />
+      <circle cx={lastX.toFixed(1)} cy={lastY.toFixed(1)} r="3" fill="#5DCAA5" />
     </svg>
   );
 }
