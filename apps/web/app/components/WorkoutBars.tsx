@@ -59,7 +59,7 @@ function parseWorkout(description: string): Block[] {
   for (const line of lines) {
     // "3x(8min Z5, 3min Z1)" or "5x(3:00 @ threshold, 2:00 easy)"
     const repeatMatch = line.match(/^(\d+)\s*[xX]\s*\((.+)\)$/);
-    if (repeatMatch) {
+    if (repeatMatch?.[1] && repeatMatch[2]) {
       const reps = parseInt(repeatMatch[1]);
       const parts = repeatMatch[2].split(",").map((s) => s.trim());
       for (let r = 0; r < reps; r++) {
