@@ -34,7 +34,7 @@ export function LineChart({
         role="img"
         aria-label="No data available"
       >
-        <p className="text-xs text-neutral-300">No data</p>
+        <p className="text-xs text-slate-300">No data</p>
       </div>
     );
   }
@@ -98,7 +98,7 @@ export function LineChart({
             x2={px + cw}
             y1={py + ch * (1 - t)}
             y2={py + ch * (1 - t)}
-            stroke="#f0f0f0"
+            stroke="#ede8df"
             strokeWidth="1"
           />
         ))}
@@ -123,7 +123,7 @@ export function LineChart({
               x2={hoveredPt.x.toFixed(1)}
               y1={py}
               y2={py + ch}
-              stroke="#e5e5e5"
+              stroke="#e4ddd2"
               strokeWidth="1"
             />
             <circle
@@ -165,10 +165,10 @@ export function LineChart({
       </svg>
 
       {/* Axis / tooltip row */}
-      <div className="mt-1 flex justify-between text-xs text-neutral-400">
+      <div className="mt-1 flex justify-between text-xs text-slate-400">
         <span>{mmdd(data[0]!.date)}</span>
         {hoveredPt ? (
-          <span className="font-medium text-neutral-700">
+          <span className="font-medium text-slate-700">
             {mmdd(hoveredPt.date)}
             {hoveredPt.value !== null
               ? ` · ${fmt(hoveredPt.value)}${unit}`

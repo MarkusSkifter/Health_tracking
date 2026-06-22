@@ -209,11 +209,28 @@ export default async function TodayPage() {
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+// Session accent: amber for runs, green for rides, muted for everything else.
+function sessionAccent(type: string | null): string {
+  switch (type) {
+    case "Run":
+    case "VirtualRun":
+      return "#b07d3a"; // amber/caramel
+    case "Ride":
+    case "VirtualRide":
+      return "#3f9142"; // green
+    default:
+      return "#a09080"; // muted warm gray
+  }
+}
+
 function PlannedWorkoutCard({ workout: w }: { workout: PlannedWorkout }) {
   const dayName = DAY_NAMES[new Date(`${w.date}T00:00:00`).getDay()];
   const duration = fmtDuration(w.plannedDurationSec);
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white px-4 py-3.5">
+    <div
+      className="rounded-2xl border border-slate-100 border-l-[3px] bg-white px-4 py-3.5"
+      style={{ borderLeftColor: sessionAccent(w.type) }}
+    >
       <div className="flex items-start gap-4">
         <div className="w-9 shrink-0 text-center">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{dayName}</p>

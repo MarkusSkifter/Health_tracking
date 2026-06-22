@@ -1,10 +1,10 @@
 type Zone = 1 | 2 | 3 | 4 | 5;
 
 const ZONE_BG: Record<Zone, string> = {
-  1: "#DBEAFE", 2: "#D1FAE5", 3: "#FEF3C7", 4: "#FFEDD5", 5: "#FEE2E2",
+  1: "#e4ddd2", 2: "#D1FAE5", 3: "#FEF3C7", 4: "#FFEDD5", 5: "#FEE2E2",
 };
 const ZONE_TEXT: Record<Zone, string> = {
-  1: "text-blue-500", 2: "text-emerald-600", 3: "text-amber-500",
+  1: "text-slate-500", 2: "text-emerald-600", 3: "text-amber-600",
   4: "text-orange-500", 5: "text-rose-500",
 };
 const ZONE_LABEL: Record<Zone, string> = { 1: "Z1", 2: "Z2", 3: "Z3", 4: "Z4", 5: "Z5" };
