@@ -31,9 +31,9 @@ interface Block {
 
 function extractMinutes(text: string): number | null {
   const minMatch = text.match(/(\d+)\s*min/i);
-  if (minMatch) return parseInt(minMatch[1]);
+  if (minMatch?.[1]) return parseInt(minMatch[1]);
   const secMatch = text.match(/(\d{1,3}):(\d{2})/);
-  if (secMatch) return parseInt(secMatch[1]);
+  if (secMatch?.[1]) return parseInt(secMatch[1]);
   return null;
 }
 
