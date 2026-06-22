@@ -136,7 +136,7 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
         type: day.type && day.type !== "Rest" ? day.type : undefined,
         moving_time: day.plannedDurationSec ?? undefined,
         icu_training_load: day.plannedLoad > 0 ? day.plannedLoad : undefined,
-        description: day.rationale,
+        description: day.description ?? day.rationale,
       });
       return { ok: true };
     } catch (err) {

@@ -3,6 +3,27 @@
 import type { Activity, PlannedWorkout } from "@health/shared";
 import { useState } from "react";
 import { CalendarGrid } from "./CalendarGrid";
+import { WorkoutBars } from "./WorkoutBars";
+
+const TYPE_CHIP: Record<string, { bg: string; text: string }> = {
+  Run: { bg: "bg-emerald-50", text: "text-emerald-700" },
+  VirtualRun: { bg: "bg-emerald-50", text: "text-emerald-700" },
+  Ride: { bg: "bg-amber-50", text: "text-amber-700" },
+  VirtualRide: { bg: "bg-amber-50", text: "text-amber-700" },
+  Swim: { bg: "bg-blue-50", text: "text-blue-700" },
+  Walk: { bg: "bg-teal-50", text: "text-teal-700" },
+};
+
+function chipStyle(type: string | null) {
+  return TYPE_CHIP[type ?? ""] ?? { bg: "bg-slate-100", text: "text-slate-600" };
+}
+
+function fmtMin(sec: number | null): string | null {
+  if (!sec) return null;
+  const h = Math.floor(sec / 3600);
+  const m = Math.round((sec % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
 
 const DAY_ABBR = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_NAMES = [
@@ -58,6 +79,7 @@ export function ExpandableCalendar({
   month: number;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [stripSelected, setStripSelected] = useState<string | null>(null);
   const [calYear, setCalYear] = useState(year);
   const [calMonth, setCalMonth] = useState(month);
   const [calActivities, setCalActivities] = useState(initialActivities);
@@ -152,11 +174,19 @@ export function ExpandableCalendar({
             const hasDone = acts.length > 0;
             const hasPlanned = planned.length > 0;
 
+            const isSelected = iso === stripSelected;
             return (
-              <div
+              <button
                 key={iso}
-                className={`flex flex-col items-center gap-1.5 rounded-xl py-3 px-1 ${
-                  isToday ? "bg-blue-600" : isPast && hasDone ? "bg-slate-50" : "bg-transparent"
+                onClick={() => setStripSelected(isSelected ? null : iso)}
+                className={`flex flex-col items-center gap-1.5 rounded-xl py-3 px-1 transition-colors ${
+                  isToday
+                    ? "bg-blue-600"
+                    : isSelected
+                      ? "bg-slate-100"
+                      : isPast && hasDone
+                        ? "bg-slate-50 hover:bg-slate-100"
+                        : "hover:bg-slate-50"
                 }`}
               >
                 <span className={`text-[10px] font-medium uppercase tracking-wide ${isToday ? "text-blue-200" : "text-slate-400"}`}>
@@ -166,17 +196,62 @@ export function ExpandableCalendar({
                   {d.getDate()}
                 </span>
                 <div className="flex h-3 items-center justify-center gap-0.5">
-                  {hasDone && acts.slice(0, 2).map((a, i) => (
-                    <span key={i} className={`h-1.5 w-1.5 rounded-full ${isToday ? "bg-blue-300" : activityDot(a.type)}`} />
+                  {hasDone && acts.slice(0, 2).map((a, idx2) => (
+                    <span key={idx2} className={`h-1.5 w-1.5 rounded-full ${isToday ? "bg-blue-300" : activityDot(a.type)}`} />
                   ))}
                   {!hasDone && hasPlanned && (
                     <span className="h-1.5 w-1.5 rounded-full border border-dashed border-violet-400" />
                   )}
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
+
+        {/* Strip day detail */}
+        {stripSelected && (() => {
+          const dayActs = actsByDate.get(stripSelected) ?? [];
+          const dayPlan = plannedByDate.get(stripSelected) ?? [];
+          const label = new Intl.DateTimeFormat("en-GB", {
+            weekday: "long", day: "numeric", month: "long",
+          }).format(new Date(`${stripSelected}T00:00:00`));
+          return (
+            <div className="mt-3 border-t border-slate-100 pt-3">
+              <p className="mb-2.5 text-xs font-semibold text-slate-700">{label}</p>
+              {dayActs.length === 0 && dayPlan.length === 0 && (
+                <p className="text-xs text-slate-400">No activity recorded.</p>
+              )}
+              <div className="flex flex-col gap-2">
+                {dayActs.map((a) => {
+                  const c = chipStyle(a.type);
+                  return (
+                    <div key={a.intervalsActivityId} className="flex items-center gap-2">
+                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${c.bg} ${c.text}`}>{a.type}</span>
+                      {a.durationSec && <span className="text-xs text-slate-500">{fmtMin(a.durationSec)}</span>}
+                      {a.trainingLoad != null && (
+                        <span className="ml-auto text-xs text-slate-400">load {Math.round(a.trainingLoad)}</span>
+                      )}
+                    </div>
+                  );
+                })}
+                {dayPlan.map((w) => (
+                  <div key={`${w.date}-${w.name}`}>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded border border-dashed border-violet-300 bg-violet-50 px-1.5 py-0.5 text-[10px] font-semibold text-violet-600">
+                        {w.type ?? "Workout"}
+                      </span>
+                      <span className="text-xs font-medium text-slate-800">{w.name}</span>
+                      {fmtMin(w.plannedDurationSec) && (
+                        <span className="ml-auto text-xs text-slate-400">{fmtMin(w.plannedDurationSec)}</span>
+                      )}
+                    </div>
+                    {w.description && <WorkoutBars description={w.description} />}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Expandable full calendar */}

@@ -114,9 +114,15 @@ export async function generateWeekSuggestions(): Promise<AiWeekPlan> {
       (hrvLines ? "HRV trend: " + hrvLines + "\n" : "") +
       (actLines ? "Recent sessions: " + actLines + "\n" : "") +
       "\nDates: " + dates.join(", ") + "\n\n" +
-      "Schema: {\"overview\":\"...\",\"days\":[{\"date\":\"YYYY-MM-DD\",\"name\":\"...\",\"type\":\"Run|Ride|Swim|WeightTraining|Rest\",\"plannedDurationSec\":3600,\"plannedLoad\":65,\"rationale\":\"...\"}]}\n\n" +
-      "Rules: Rest => plannedDurationSec=null plannedLoad=0. Alternate hard/easy. " +
-      "Easy load 20-45, moderate 45-70, hard 70-120. If fatigued or ACR>1.3 prioritise rest.";
+      "Schema: {\"overview\":\"...\",\"days\":[{\"date\":\"YYYY-MM-DD\",\"name\":\"...\",\"type\":\"Run|Ride|Swim|WeightTraining|Rest\",\"plannedDurationSec\":3600,\"plannedLoad\":65,\"rationale\":\"one sentence coach note\",\"description\":\"- 15m 50-60%\\n4x\\n- 8m 91-105%\\n- 3m 50-60%\\n- 15m 50-60%\"}]}\n\n" +
+      "Rules:\n" +
+      "- Rest => plannedDurationSec=null plannedLoad=0, omit description.\n" +
+      "- Alternate hard/easy. Easy load 20-45, moderate 45-70, hard 70-120.\n" +
+      "- If fatigued or ACR>1.3 prioritise rest and easy sessions.\n" +
+      "- description: workout steps in intervals.icu format. Each step on its own line prefixed with '- '. " +
+      "Use 'Nx' on its own line for repeat blocks, then '- Nm X-Y%' for each step inside the block. " +
+      "Intensity as % of FTP: Z1=50-60%, Z2=60-75%, Z3=76-90%, Z4=91-105%, Z5=106%+. " +
+      "Duration as Nm (minutes) or Ns (seconds). Example: '- 15m 50-60%\\n4x\\n- 8m 91-105%\\n- 3m 50%\\n- 15m 50%'.";
 
     const { ANTHROPIC_API_KEY } = anthropicEnv();
     const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });

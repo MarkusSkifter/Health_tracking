@@ -268,6 +268,11 @@ function SuggestionCard({ day: d }: { day: AiDaySuggestion }) {
           <AcceptButton day={d} />
         </div>
       )}
+      {!isRest && d.description && (
+        <div className="mt-1 w-full pl-[52px]">
+          <WorkoutBars description={d.description} />
+        </div>
+      )}
     </div>
   );
 }
