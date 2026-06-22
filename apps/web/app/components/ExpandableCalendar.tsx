@@ -249,10 +249,7 @@ export function ExpandableCalendar({
                         <span className="ml-auto">
                           <DeleteWorkoutButton
                             eventId={w.id}
-                            onDeleted={() => {
-                              setStripSelected(null);
-                              window.location.reload();
-                            }}
+                            onSuccess={() => setStripSelected(null)}
                           />
                         </span>
                       )}
