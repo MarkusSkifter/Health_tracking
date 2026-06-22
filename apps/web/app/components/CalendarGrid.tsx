@@ -1,7 +1,9 @@
 "use client";
 
 import type { Activity, PlannedWorkout } from "@health/shared";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { DeleteWorkoutButton } from "./DeleteWorkoutButton";
 import { WorkoutBars } from "./WorkoutBars";
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
@@ -151,6 +153,7 @@ function AddWorkoutForm({ date, onCancel, onSaved }: { date: string; onCancel: (
 }
 
 function DetailPanel({ detail, onClose }: { detail: DayDetail; onClose: () => void }) {
+  const router = useRouter();
   const [adding, setAdding] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -232,7 +235,15 @@ function DetailPanel({ detail, onClose }: { detail: DayDetail; onClose: () => vo
                         </span>
                         <span className="text-sm font-medium text-slate-800">{w.name}</span>
                         {w.plannedDurationSec != null && (
-                          <span className="ml-auto text-sm text-slate-400">{fmtDuration(w.plannedDurationSec)}</span>
+                          <span className="text-sm text-slate-400">{fmtDuration(w.plannedDurationSec)}</span>
+                        )}
+                        {w.id != null && (
+                          <span className="ml-auto">
+                            <DeleteWorkoutButton
+                              eventId={w.id}
+                              onSuccess={() => { onClose(); router.refresh(); }}
+                            />
+                          </span>
                         )}
                       </div>
                       {w.description && (
