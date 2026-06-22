@@ -5,6 +5,7 @@ import { AcrBadge } from "./components/AcrBadge";
 import { ExpandableCalendar } from "./components/ExpandableCalendar";
 import { Sparkline } from "./components/Sparkline";
 import { SyncButton } from "./components/SyncButton";
+import { WorkoutBars } from "./components/WorkoutBars";
 
 export const revalidate = 60;
 
@@ -166,12 +167,28 @@ export default async function TodayPage() {
         )}
       </div>
 
-      {/* AI week suggestions (only when no real planned workouts) */}
-      {workouts.length === 0 && suggestions && (
+      {/* Real planned workouts from intervals.icu */}
+      {workouts.length > 0 && (
         <section>
           <div className="mb-3 flex items-center gap-2.5">
             <h2 className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
-              AI suggested week
+              This week
+            </h2>
+          </div>
+          <div className="flex flex-col gap-2">
+            {workouts.map((w) => (
+              <PlannedWorkoutCard key={`${w.date}-${w.name}`} workout={w} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* AI week suggestions */}
+      {suggestions && (
+        <section>
+          <div className="mb-3 flex items-center gap-2.5">
+            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+              {workouts.length > 0 ? "AI coach" : "AI suggested week"}
             </h2>
             <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-semibold text-violet-600">
               AI
@@ -190,6 +207,37 @@ export default async function TodayPage() {
 }
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function PlannedWorkoutCard({ workout: w }: { workout: PlannedWorkout }) {
+  const dayName = DAY_NAMES[new Date(`${w.date}T00:00:00`).getDay()];
+  const duration = fmtDuration(w.plannedDurationSec);
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-white px-4 py-3.5">
+      <div className="flex items-start gap-4">
+        <div className="w-9 shrink-0 text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{dayName}</p>
+          <p className="text-sm font-bold text-slate-900">{w.date.slice(8)}</p>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-slate-900">{w.name}</p>
+          <div className="mt-0.5 flex gap-3 text-xs text-slate-400">
+            {w.type && <span>{w.type}</span>}
+            {duration && <span>{duration}</span>}
+            {w.plannedLoad != null && w.plannedLoad > 0 && (
+              <span className="font-semibold text-slate-500">load {Math.round(w.plannedLoad)}</span>
+            )}
+          </div>
+          {w.description && (
+            <>
+              <p className="mt-1 text-xs leading-relaxed text-slate-400">{w.description}</p>
+              <WorkoutBars description={w.description} />
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function SuggestionCard({ day: d }: { day: AiDaySuggestion }) {
   const dayName = DAY_NAMES[new Date(`${d.date}T00:00:00`).getDay()];

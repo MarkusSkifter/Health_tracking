@@ -58,7 +58,8 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
   app.get("/api/upcoming", async (_req, reply) => {
     try {
       const workouts = await fetchUpcomingWorkouts(7);
-      const suggestions = workouts.length === 0 ? await generateWeekSuggestions() : null;
+      let suggestions = null;
+      try { suggestions = await generateWeekSuggestions(); } catch { /* optional */ }
       return { workouts, suggestions };
     } catch (err) {
       app.log.error(err, "Failed to fetch upcoming workouts");
