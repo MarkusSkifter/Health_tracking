@@ -76,8 +76,8 @@ export function parseWorkout(description: string): Block[] {
       const reps = parseInt(repeatLineMatch[1]);
       i++;
       const sub: Block[] = [];
-      while (i < lines.length && /^\s*-/.test(lines[i])) {
-        const b = parseLine(lines[i]);
+      while (i < lines.length && /^\s*-/.test(lines[i] ?? "")) {
+        const b = parseLine(lines[i] ?? "");
         if (b) sub.push(b);
         i++;
       }
