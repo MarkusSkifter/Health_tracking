@@ -110,7 +110,7 @@ export function parseWorkout(description: string): Block[] {
 
 export function WorkoutBars({ description }: { description: string }) {
   const blocks = parseWorkout(description);
-  if (blocks.length < 2) return null;
+  if (!blocks.length) return null;
 
   const total = blocks.reduce((s, b) => s + b.minutes, 0);
 
