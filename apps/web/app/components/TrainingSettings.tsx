@@ -44,17 +44,21 @@ export function TrainingSettings() {
       setSaving(false);
       return;
     }
-    const res = await fetch("/api/settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ftpWatts, runThresholdSec }),
-    });
-    if (res.ok) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
-    } else {
-      const b = await res.json().catch(() => ({})) as { error?: string };
-      setError(b.error ?? "Failed to save");
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ftpWatts, runThresholdSec }),
+      });
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+      } else {
+        const b = await res.json().catch(() => ({})) as { error?: string };
+        setError(`[${res.status}] ${b.error ?? "Unknown error"}`);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Network error");
     }
     setSaving(false);
   }
