@@ -84,6 +84,8 @@ export interface AiDaySuggestion {
   plannedDurationSec: number | null;
   plannedLoad: number;
   rationale: string;
+  /** Workout steps in intervals.icu format (- 40m 50-60%, 8x blocks, etc.) */
+  description?: string | null;
 }
 
 /** A full AI-generated week plan returned when the calendar is empty. */

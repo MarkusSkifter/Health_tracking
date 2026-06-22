@@ -1,77 +1,108 @@
 type Zone = 1 | 2 | 3 | 4 | 5;
 
 const ZONE_BG: Record<Zone, string> = {
-  1: "#DBEAFE",
-  2: "#D1FAE5",
-  3: "#FEF3C7",
-  4: "#FFEDD5",
-  5: "#FEE2E2",
+  1: "#DBEAFE", 2: "#D1FAE5", 3: "#FEF3C7", 4: "#FFEDD5", 5: "#FEE2E2",
 };
-
 const ZONE_TEXT: Record<Zone, string> = {
-  1: "text-blue-500",
-  2: "text-emerald-600",
-  3: "text-amber-500",
-  4: "text-orange-500",
-  5: "text-rose-500",
+  1: "text-blue-500", 2: "text-emerald-600", 3: "text-amber-500",
+  4: "text-orange-500", 5: "text-rose-500",
 };
+const ZONE_LABEL: Record<Zone, string> = { 1: "Z1", 2: "Z2", 3: "Z3", 4: "Z4", 5: "Z5" };
 
-const ZONE_LABEL: Record<Zone, string> = {
-  1: "Z1",
-  2: "Z2",
-  3: "Z3",
-  4: "Z4",
-  5: "Z5",
-};
+interface Block { minutes: number; zone: Zone; }
 
-interface Block {
-  minutes: number;
-  zone: Zone;
+function pctToZone(avg: number): Zone {
+  if (avg > 105) return 5;
+  if (avg > 90)  return 4;
+  if (avg > 75)  return 3;
+  if (avg > 55)  return 2;
+  return 1;
 }
 
 function extractMinutes(text: string): number | null {
-  const minMatch = text.match(/(\d+)\s*min/i);
+  // "1h30m" or "1h"
+  const hMatch = text.match(/(\d+)\s*h\s*(\d+)?/i);
+  if (hMatch?.[1]) return parseInt(hMatch[1]) * 60 + (hMatch[2] ? parseInt(hMatch[2]) : 0);
+
+  // "40min" or standalone "40m" (not followed by ore letters)
+  const minMatch = text.match(/(\d+)\s*min/i) ?? text.match(/(\d+)\s*m\b/);
   if (minMatch?.[1]) return parseInt(minMatch[1]);
-  const secMatch = text.match(/(\d{1,3}):(\d{2})/);
-  if (secMatch?.[1]) return parseInt(secMatch[1]);
+
+  // "10s" or "10sec" -> convert to fractional minutes (min 0.5 for bar visibility)
+  const secMatch = text.match(/(\d+)\s*s(?:ec)?\b/i);
+  if (secMatch?.[1]) return Math.max(0.5, parseInt(secMatch[1]) / 60);
+
+  // "8:00" MM:SS -> minutes
+  const timeMatch = text.match(/(\d{1,3}):(\d{2})/);
+  if (timeMatch?.[1]) return parseInt(timeMatch[1]);
+
   return null;
 }
 
 function extractZone(text: string): Zone {
+  // "50-60%", "300%", "105%"
+  const pctMatch = text.match(/(\d+)(?:\s*[-]\s*(\d+))?\s*%/);
+  if (pctMatch?.[1]) {
+    const lo = parseInt(pctMatch[1]);
+    const hi = pctMatch[2] ? parseInt(pctMatch[2]) : lo;
+    return pctToZone((lo + hi) / 2);
+  }
   const t = text.toLowerCase();
-  if (/\bz5\b|vo2|sprint|all[- ]?out|max effort/.test(t)) return 5;
+  if (/\bz5\b|vo2|sprint|all[- ]?out/.test(t)) return 5;
   if (/\bz4\b|threshold|ftp|ltp|\bhard\b/.test(t)) return 4;
   if (/\bz3\b|tempo|sweet[- ]?spot|moderate/.test(t)) return 3;
   if (/\bz2\b|endurance|aerobic/.test(t)) return 2;
   return 1;
 }
 
-function parseSingleLine(line: string): Block | null {
-  const mins = extractMinutes(line);
+function parseLine(raw: string): Block | null {
+  const text = raw.replace(/^\s*-\s*/, "").trim();
+  const mins = extractMinutes(text);
   if (!mins) return null;
-  return { minutes: mins, zone: extractZone(line) };
+  return { minutes: mins, zone: extractZone(text) };
 }
 
-function parseWorkout(description: string): Block[] {
+export function parseWorkout(description: string): Block[] {
   const blocks: Block[] = [];
-  const lines = description.split(/[\n;]+/).map((s) => s.trim()).filter(Boolean);
+  const lines = description.split(/\n/).map((s) => s.trim()).filter(Boolean);
 
-  for (const line of lines) {
-    // "3x(8min Z5, 3min Z1)" or "5x(3:00 @ threshold, 2:00 easy)"
-    const repeatMatch = line.match(/^(\d+)\s*[xX]\s*\((.+)\)$/);
-    if (repeatMatch?.[1] && repeatMatch[2]) {
-      const reps = parseInt(repeatMatch[1]);
-      const parts = repeatMatch[2].split(",").map((s) => s.trim());
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // "8x" on its own line — collect following "- ..." sub-lines
+    const repeatLineMatch = line.match(/^(\d+)\s*[xX]$/);
+    if (repeatLineMatch?.[1]) {
+      const reps = parseInt(repeatLineMatch[1]);
+      i++;
+      const sub: Block[] = [];
+      while (i < lines.length && /^\s*-/.test(lines[i])) {
+        const b = parseLine(lines[i]);
+        if (b) sub.push(b);
+        i++;
+      }
+      for (let r = 0; r < reps; r++) blocks.push(...sub);
+      continue;
+    }
+
+    // "3x(8min Z5, 3min Z1)" inline repeat
+    const inlineRepeat = line.match(/^(\d+)\s*[xX]\s*\((.+)\)$/);
+    if (inlineRepeat?.[1] && inlineRepeat[2]) {
+      const reps = parseInt(inlineRepeat[1]);
       for (let r = 0; r < reps; r++) {
-        for (const part of parts) {
-          const b = parseSingleLine(part);
+        for (const part of inlineRepeat[2].split(",").map((s) => s.trim())) {
+          const b = parseLine(part);
           if (b) blocks.push(b);
         }
       }
+      i++;
       continue;
     }
-    const b = parseSingleLine(line);
+
+    // Plain or "- content" line
+    const b = parseLine(line);
     if (b) blocks.push(b);
+    i++;
   }
 
   return blocks;
@@ -83,7 +114,6 @@ export function WorkoutBars({ description }: { description: string }) {
 
   const total = blocks.reduce((s, b) => s + b.minutes, 0);
 
-  // Zone summary: total minutes per zone
   const zoneSummary = blocks.reduce<Partial<Record<Zone, number>>>((acc, b) => {
     acc[b.zone] = (acc[b.zone] ?? 0) + b.minutes;
     return acc;
@@ -91,30 +121,28 @@ export function WorkoutBars({ description }: { description: string }) {
 
   return (
     <div className="mt-2 select-none">
-      {/* Bar chart */}
       <div className="flex h-4 w-full overflow-hidden rounded-md gap-px">
-        {blocks.map((b, i) => (
+        {blocks.map((b, idx) => (
           <div
-            key={i}
+            key={idx}
             style={{
               width: `${(b.minutes / total) * 100}%`,
               backgroundColor: ZONE_BG[b.zone],
               minWidth: 1,
             }}
-            title={`${b.minutes}min ${ZONE_LABEL[b.zone]}`}
+            title={`${Math.round(b.minutes * 10) / 10}min ${ZONE_LABEL[b.zone]}`}
           />
         ))}
       </div>
-      {/* Zone legend */}
       <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0">
         {(Object.entries(zoneSummary) as [string, number][])
           .sort(([a], [b]) => Number(a) - Number(b))
           .map(([z, mins]) => (
             <span key={z} className={`text-[10px] font-semibold tabular-nums ${ZONE_TEXT[Number(z) as Zone]}`}>
-              {ZONE_LABEL[Number(z) as Zone]} {mins}min
+              {ZONE_LABEL[Number(z) as Zone]} {Math.round(mins)}min
             </span>
           ))}
-        <span className="ml-auto text-[10px] text-slate-300">{total}min total</span>
+        <span className="ml-auto text-[10px] text-slate-300">{Math.round(total)}min</span>
       </div>
     </div>
   );
