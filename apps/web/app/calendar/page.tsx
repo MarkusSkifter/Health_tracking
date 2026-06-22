@@ -59,19 +59,22 @@ export default async function CalendarPage({ searchParams }: { searchParams: Sea
   const next = nextMonth(month);
   const isFuture = next > nextMonth(thisMonth);
 
+  const navBtnStyle = "flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-medium transition-colors";
+
   return (
     <main className="flex flex-col gap-8">
       <header className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Calendar</p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
+          <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>Calendar</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-white">
             {monthLabel(month)}
           </h1>
         </div>
         <div className="flex items-center gap-0.5">
           <Link
             href={`/calendar?month=${prev}`}
-            className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-medium text-slate-400 transition-colors hover:bg-white hover:text-slate-700"
+            className={navBtnStyle}
+            style={{ color: "rgba(255,255,255,0.4)" }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -81,7 +84,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Sea
           {!isFuture && (
             <Link
               href={`/calendar?month=${next}`}
-              className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-medium text-slate-400 transition-colors hover:bg-white hover:text-slate-700"
+              className={navBtnStyle}
+              style={{ color: "rgba(255,255,255,0.4)" }}
             >
               {monthShort(next)}
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -92,7 +96,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Sea
         </div>
       </header>
 
-      <div className="rounded-2xl border border-slate-100 bg-white p-4">
+      <div className="glass-card rounded-2xl p-4">
         <CalendarGrid
           year={year}
           month={monthNum}
@@ -102,21 +106,21 @@ export default async function CalendarPage({ searchParams }: { searchParams: Sea
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-5 text-xs text-slate-400">
+      <div className="flex flex-wrap gap-5 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-emerald-100" /> Run
+          <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "rgba(29,158,117,0.3)" }} /> Run
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-amber-100" /> Ride
+          <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "rgba(251,191,36,0.3)" }} /> Ride
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-blue-100" /> Swim
+          <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "rgba(55,138,221,0.3)" }} /> Swim
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-slate-100" /> Other
+          <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "rgba(255,255,255,0.08)" }} /> Other
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm border border-dashed border-violet-300" /> Planned
+          <span className="h-2.5 w-2.5 rounded-sm" style={{ border: "0.5px dashed rgba(93,202,165,0.5)" }} /> Planned
         </span>
       </div>
     </main>

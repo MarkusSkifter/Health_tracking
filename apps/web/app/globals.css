@@ -1,89 +1,32 @@
 @import "tailwindcss";
 
-/*
-  Warm athletic light theme — "Whoop meets warm Scandinavian"
-  Background: warm off-white. Accent: amber/caramel. No blue. No cold grays.
-
-  We remap Tailwind's default color scales so the existing hardcoded
-  utilities (slate / blue / violet / sky / teal) resolve to warm values
-  app-wide, then layer targeted component tweaks on top.
-*/
-@theme {
-  /* Neutrals — warm grays replace cold "slate" */
-  --color-slate-50: #faf7f2;
-  --color-slate-100: #ede8df;
-  --color-slate-200: #e4ddd2;
-  --color-slate-300: #d3c8b8;
-  --color-slate-400: #a09080;
-  --color-slate-500: #897a68;
-  --color-slate-600: #6b5d4d;
-  --color-slate-700: #4a4135;
-  --color-slate-800: #2e271d;
-  --color-slate-900: #1e1a14;
-  --color-slate-950: #14110c;
-
-  /* Accent — amber / caramel replaces "blue" */
-  --color-blue-50: #f6eee0;
-  --color-blue-100: #efe1cc;
-  --color-blue-200: #e2c79c;
-  --color-blue-300: #d2ab70;
-  --color-blue-400: #c0904b;
-  --color-blue-500: #b07d3a;
-  --color-blue-600: #b07d3a;
-  --color-blue-700: #946429;
-  --color-blue-800: #7a521f;
-  --color-blue-900: #5f3f17;
-
-  /* Secondary warm clay replaces "violet" (AI / planned accents) */
-  --color-violet-50: #f4ece2;
-  --color-violet-100: #ecdecd;
-  --color-violet-300: #c8a47f;
-  --color-violet-400: #b88a5b;
-  --color-violet-500: #a4713f;
-  --color-violet-600: #9c6b3f;
-  --color-violet-700: #845832;
-
-  /* "sky" -> warm sand */
-  --color-sky-50: #f3ece2;
-  --color-sky-700: #8a7a68;
-
-  /* "teal" -> warm olive replaces cold teal (Walk) */
-  --color-teal-50: #eef0e3;
-  --color-teal-400: #9ba35d;
-  --color-teal-700: #687035;
-}
-
 :root {
-  color-scheme: light;
-  --warm-bg: #faf7f2;
-  --warm-sidebar: #ede8df;
-  --warm-border: #e4ddd2;
-  --warm-accent: #b07d3a;
-  --warm-heading: #1e1a14;
-  --warm-label: #a09080;
-}
-
-html {
-  background-color: var(--warm-bg);
+  color-scheme: dark;
 }
 
 body {
-  background-color: var(--warm-bg);
-  color: var(--warm-heading);
+  background-color: #060608;
+  color: #ffffff;
   font-family: 'Inter', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-  background-color: #efe1cc;
-  color: #7a521f;
+  background-color: rgba(93, 202, 165, 0.25);
+  color: #ffffff;
 }
 
 :focus-visible {
-  outline: 2px solid var(--warm-accent);
+  outline: 2px solid #5DCAA5;
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Glass card — base bg + border used across all card surfaces */
+.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 0.5px solid rgba(255, 255, 255, 0.07);
 }
 
 /* Smooth calendar expand — grid-template-rows trick */

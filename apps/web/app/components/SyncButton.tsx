@@ -13,7 +13,6 @@ export function SyncButton() {
       const res = await fetch("/api/sync", { method: "POST" });
       if (res.ok) {
         setState("done");
-        // Reload to show freshly ingested data
         setTimeout(() => window.location.reload(), 800);
       } else {
         const body = await res.json().catch(() => ({}));
@@ -28,18 +27,20 @@ export function SyncButton() {
     }
   }
 
+  const styles: Record<string, { background: string; color: string }> = {
+    idle: { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" },
+    syncing: { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" },
+    done: { background: "rgba(29,158,117,0.15)", color: "#5DCAA5" },
+    error: { background: "rgba(248,113,113,0.15)", color: "#F87171" },
+  };
+
   return (
     <div className="flex flex-col items-end gap-1">
       <button
         onClick={handleSync}
         disabled={state === "syncing" || state === "done"}
-        className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 ${
-          state === "done"
-            ? "bg-emerald-50 text-emerald-700"
-            : state === "error"
-              ? "bg-rose-50 text-rose-600"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
-        } disabled:opacity-50`}
+        className="rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 disabled:opacity-50"
+        style={styles[state]}
       >
         {state === "idle" && "Sync now"}
         {state === "syncing" && "Syncing…"}
@@ -47,7 +48,7 @@ export function SyncButton() {
         {state === "error" && "Retry"}
       </button>
       {state === "error" && errorMsg && (
-        <p className="text-xs text-rose-500">{errorMsg}</p>
+        <p className="text-xs" style={{ color: "#F87171" }}>{errorMsg}</p>
       )}
     </div>
   );

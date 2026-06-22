@@ -23,7 +23,7 @@ export function ImportHistoryButton() {
 
   if (state === "done") {
     return (
-      <p className="text-sm font-medium text-emerald-600">
+      <p className="text-sm font-medium" style={{ color: "#5DCAA5" }}>
         Import complete — refresh Analytics to see your full history.
       </p>
     );
@@ -34,7 +34,8 @@ export function ImportHistoryButton() {
       <button
         onClick={handleImport}
         disabled={state === "loading"}
-        className="w-fit rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-all duration-150 hover:bg-blue-700 disabled:opacity-50"
+        className="w-fit rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all duration-150 disabled:opacity-50"
+        style={{ background: state === "error" ? "rgba(248,113,113,0.2)" : "linear-gradient(135deg, #1D9E75, #2A7FC0)" }}
       >
         {state === "loading"
           ? "Importing… (this may take a minute)"

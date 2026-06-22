@@ -7,18 +7,18 @@ import { DeleteWorkoutButton } from "./DeleteWorkoutButton";
 import { WorkoutBars } from "./WorkoutBars";
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-  Ride: { bg: "bg-amber-50", text: "text-amber-700" },
-  VirtualRide: { bg: "bg-amber-50", text: "text-amber-700" },
-  Run: { bg: "bg-emerald-50", text: "text-emerald-700" },
-  VirtualRun: { bg: "bg-emerald-50", text: "text-emerald-700" },
-  Swim: { bg: "bg-blue-50", text: "text-blue-700" },
-  Walk: { bg: "bg-teal-50", text: "text-teal-700" },
-  WeightTraining: { bg: "bg-violet-50", text: "text-violet-700" },
-  Workout: { bg: "bg-slate-100", text: "text-slate-600" },
+  Ride:          { bg: "rgba(251,191,36,0.18)",  text: "#FCD34D" },
+  VirtualRide:   { bg: "rgba(251,191,36,0.18)",  text: "#FCD34D" },
+  Run:           { bg: "rgba(29,158,117,0.18)",   text: "#5DCAA5" },
+  VirtualRun:    { bg: "rgba(29,158,117,0.18)",   text: "#5DCAA5" },
+  Swim:          { bg: "rgba(55,138,221,0.18)",   text: "#6BAEE8" },
+  Walk:          { bg: "rgba(93,202,165,0.18)",   text: "#5DCAA5" },
+  WeightTraining:{ bg: "rgba(192,132,252,0.18)",  text: "#C084FC" },
+  Workout:       { bg: "rgba(255,255,255,0.08)",  text: "rgba(255,255,255,0.5)" },
 };
 
 function typeColor(type: string | null) {
-  return TYPE_COLORS[type ?? ""] ?? { bg: "bg-slate-100", text: "text-slate-600" };
+  return TYPE_COLORS[type ?? ""] ?? { bg: "rgba(255,255,255,0.08)", text: "rgba(255,255,255,0.5)" };
 }
 
 function fmtDuration(sec: number | null): string {
@@ -82,12 +82,22 @@ function AddWorkoutForm({ date, onCancel, onSaved }: { date: string; onCancel: (
     }
   }
 
-  const inputCls = "w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-300 focus:border-blue-400 focus:bg-white focus:outline-none transition-colors";
+  const inputStyle: React.CSSProperties = {
+    background: "rgba(255,255,255,0.06)",
+    border: "0.5px solid rgba(255,255,255,0.12)",
+    borderRadius: 12,
+    padding: "8px 12px",
+    fontSize: 14,
+    color: "#fff",
+    width: "100%",
+    outline: "none",
+    transition: "border-color 0.15s",
+  };
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
       <input
-        className={inputCls}
+        style={inputStyle}
         placeholder="Workout name"
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -97,16 +107,16 @@ function AddWorkoutForm({ date, onCancel, onSaved }: { date: string; onCancel: (
 
       <div className="flex gap-2">
         <select
-          className={`${inputCls} flex-1`}
+          style={{ ...inputStyle, flex: 1 }}
           value={type}
           onChange={(e) => setType(e.target.value)}
         >
           {WORKOUT_TYPES.map((t) => (
-            <option key={t} value={t}>{t === "WeightTraining" ? "Weights" : t}</option>
+            <option key={t} value={t} style={{ background: "#0f0f12" }}>{t === "WeightTraining" ? "Weights" : t}</option>
           ))}
         </select>
         <input
-          className={`${inputCls} w-24`}
+          style={{ ...inputStyle, width: 80 }}
           type="number"
           placeholder="min"
           min="1"
@@ -114,7 +124,7 @@ function AddWorkoutForm({ date, onCancel, onSaved }: { date: string; onCancel: (
           onChange={(e) => setDurationMin(e.target.value)}
         />
         <input
-          className={`${inputCls} w-20`}
+          style={{ ...inputStyle, width: 72 }}
           type="number"
           placeholder="load"
           min="0"
@@ -124,26 +134,30 @@ function AddWorkoutForm({ date, onCancel, onSaved }: { date: string; onCancel: (
       </div>
 
       <textarea
-        className={`${inputCls} min-h-[80px] resize-y font-mono text-xs leading-relaxed`}
+        style={{ ...inputStyle, minHeight: 80, resize: "vertical", fontFamily: "monospace", fontSize: 12, lineHeight: 1.6 }}
         placeholder={"e.g. 15min Z1\n3x(8min @ threshold, 3min easy)\n10min cooldown"}
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
 
-      {error && <p className="text-xs text-rose-500">{error}</p>}
+      {error && <p className="text-xs" style={{ color: "#F87171" }}>{error}</p>}
 
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={saving || !name.trim()}
-          className="flex-1 rounded-xl bg-blue-600 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-40"
+          className="flex-1 rounded-xl py-2 text-sm font-semibold text-white transition-colors disabled:opacity-40"
+          style={{ background: "linear-gradient(135deg, #1D9E75, #2A7FC0)" }}
         >
           {saving ? "Saving..." : "Add to calendar"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-50"
+          className="rounded-xl px-4 py-2 text-sm font-medium transition-colors"
+          style={{ border: "0.5px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
         >
           Cancel
         </button>
@@ -168,16 +182,20 @@ function DetailPanel({ detail, onClose }: { detail: DayDetail; onClose: () => vo
 
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center md:items-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" />
+      <div className="absolute inset-0" style={{ background: "rgba(6,6,8,0.7)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }} />
       <div
-        className="relative z-50 w-full max-w-sm rounded-t-2xl md:rounded-2xl bg-white p-6 shadow-xl"
+        className="relative z-50 w-full max-w-sm rounded-t-2xl md:rounded-2xl p-6"
+        style={{ background: "rgba(18,18,22,0.96)", border: "0.5px solid rgba(255,255,255,0.1)", boxShadow: "0 24px 80px rgba(0,0,0,0.6)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-center justify-between">
-          <p className="font-semibold text-slate-900">{label}</p>
+          <p className="font-semibold text-white">{label}</p>
           <button
             onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
+            className="flex h-7 w-7 items-center justify-center rounded-lg transition-colors"
+            style={{ color: "rgba(255,255,255,0.4)" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLElement).style.color = "#fff"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.4)"; }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M6 18L18 6M6 6l12 12" />
@@ -186,35 +204,35 @@ function DetailPanel({ detail, onClose }: { detail: DayDetail; onClose: () => vo
         </div>
 
         {saved ? (
-          <p className="text-sm font-medium text-emerald-600">Workout added to intervals.icu!</p>
+          <p className="text-sm font-medium" style={{ color: "#5DCAA5" }}>Workout added to intervals.icu!</p>
         ) : adding ? (
           <AddWorkoutForm date={detail.date} onCancel={() => setAdding(false)} onSaved={handleSaved} />
         ) : (
           <>
             {detail.activities.length === 0 && detail.planned.length === 0 && (
-              <p className="mb-5 text-sm text-slate-400">No activities or planned workouts.</p>
+              <p className="mb-5 text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>No activities or planned workouts.</p>
             )}
 
             {detail.activities.length > 0 && (
               <div className="mb-5">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Completed</p>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>Completed</p>
                 <div className="flex flex-col gap-2">
                   {detail.activities.map((a) => {
                     const c = typeColor(a.type);
                     return (
                       <div key={a.intervalsActivityId} className="flex items-center gap-3">
-                        <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${c.bg} ${c.text}`}>
+                        <span className="rounded-md px-2 py-0.5 text-xs font-medium" style={{ background: c.bg, color: c.text }}>
                           {shortType(a.type)}
                         </span>
-                        <span className="text-sm text-slate-700">{fmtDuration(a.durationSec)}</span>
+                        <span className="text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>{fmtDuration(a.durationSec)}</span>
                         {a.distanceM != null && (
-                          <span className="text-sm text-slate-500">{(a.distanceM / 1000).toFixed(1)} km</span>
+                          <span className="text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>{(a.distanceM / 1000).toFixed(1)} km</span>
                         )}
                         {a.avgPower != null && (
-                          <span className="text-sm text-slate-400">{a.avgPower} W</span>
+                          <span className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>{a.avgPower} W</span>
                         )}
                         {a.trainingLoad != null && (
-                          <span className="ml-auto text-xs text-slate-400">load {Math.round(a.trainingLoad)}</span>
+                          <span className="ml-auto text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>load {Math.round(a.trainingLoad)}</span>
                         )}
                       </div>
                     );
@@ -225,17 +243,20 @@ function DetailPanel({ detail, onClose }: { detail: DayDetail; onClose: () => vo
 
             {detail.planned.length > 0 && (
               <div className="mb-5">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Planned</p>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>Planned</p>
                 <div className="flex flex-col gap-2">
                   {detail.planned.map((w) => (
                     <div key={`${w.date}-${w.name}`}>
                       <div className="flex items-center gap-3">
-                        <span className="rounded-md border border-dashed border-violet-300 bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700">
+                        <span
+                          className="rounded-md px-2 py-0.5 text-xs font-medium"
+                          style={{ border: "0.5px dashed rgba(93,202,165,0.5)", background: "rgba(93,202,165,0.08)", color: "#5DCAA5" }}
+                        >
                           {shortType(w.type)}
                         </span>
-                        <span className="text-sm font-medium text-slate-800">{w.name}</span>
+                        <span className="text-sm font-medium text-white">{w.name}</span>
                         {w.plannedDurationSec != null && (
-                          <span className="text-sm text-slate-400">{fmtDuration(w.plannedDurationSec)}</span>
+                          <span className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>{fmtDuration(w.plannedDurationSec)}</span>
                         )}
                         {w.id != null && (
                           <span className="ml-auto">
@@ -248,7 +269,7 @@ function DetailPanel({ detail, onClose }: { detail: DayDetail; onClose: () => vo
                       </div>
                       {w.description && (
                         <>
-                          <p className="mt-1 pl-1 text-xs leading-relaxed text-slate-400">{w.description}</p>
+                          <p className="mt-1 pl-1 text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.35)" }}>{w.description}</p>
                           <WorkoutBars description={w.description} />
                         </>
                       )}
@@ -260,7 +281,10 @@ function DetailPanel({ detail, onClose }: { detail: DayDetail; onClose: () => vo
 
             <button
               onClick={() => setAdding(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 py-2.5 text-sm font-medium text-slate-400 transition-colors hover:border-blue-300 hover:text-blue-600"
+              className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium transition-colors"
+              style={{ border: "0.5px dashed rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.4)" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(93,202,165,0.5)"; (e.currentTarget as HTMLElement).style.color = "#5DCAA5"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.15)"; (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.4)"; }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 5v14M5 12h14" />
@@ -320,15 +344,14 @@ export function CalendarGrid({
 
   return (
     <>
-      <div className="overflow-hidden rounded-xl border border-slate-100">
+      <div className="overflow-hidden rounded-xl" style={{ border: "0.5px solid rgba(255,255,255,0.08)" }}>
         {/* Weekday headers */}
-        <div className="grid grid-cols-7 border-b border-slate-100">
+        <div className="grid grid-cols-7" style={{ borderBottom: "0.5px solid rgba(255,255,255,0.08)" }}>
           {WEEKDAYS.map((d, i) => (
             <div
               key={d}
-              className={`py-2 text-center text-[11px] font-semibold uppercase tracking-wider ${
-                i >= 5 ? "text-slate-300" : "text-slate-400"
-              }`}
+              className="py-2 text-center text-[11px] font-semibold uppercase tracking-wider"
+              style={{ color: i >= 5 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.35)" }}
             >
               {d}
             </div>
@@ -336,10 +359,19 @@ export function CalendarGrid({
         </div>
 
         {/* Day cells */}
-        <div className="grid grid-cols-7 divide-x divide-y divide-slate-50">
+        <div
+          className="grid grid-cols-7"
+          style={{ borderTop: "0.5px solid rgba(255,255,255,0.04)" }}
+        >
           {cells.map((day, idx) => {
             if (!day) {
-              return <div key={`pad-${idx}`} className={`${cellH} bg-slate-50/40`} />;
+              return (
+                <div
+                  key={`pad-${idx}`}
+                  className={cellH}
+                  style={{ background: "rgba(255,255,255,0.01)", borderRight: "0.5px solid rgba(255,255,255,0.04)", borderBottom: "0.5px solid rgba(255,255,255,0.04)" }}
+                />
+              );
             }
             const d = new Date(year, month - 1, day);
             const iso = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -347,23 +379,40 @@ export function CalendarGrid({
             const isToday = iso === today;
             const isPast = iso < today;
             const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+            const isSelected = selected === iso;
 
             return (
               <button
                 key={iso}
                 onClick={() => setSelected(iso === selected ? null : iso)}
-                className={`${cellH} p-1.5 text-left flex flex-col gap-0.5 transition-colors hover:bg-slate-50 ${
-                  isWeekend && !isToday ? "bg-slate-50/30" : ""
-                } ${selected === iso ? "ring-1 ring-inset ring-blue-200 bg-blue-50/30" : ""}`}
+                className={`${cellH} p-1.5 text-left flex flex-col gap-0.5 transition-colors`}
+                style={{
+                  background: isSelected
+                    ? "rgba(93,202,165,0.08)"
+                    : isWeekend && !isToday
+                      ? "rgba(255,255,255,0.015)"
+                      : "transparent",
+                  borderRight: "0.5px solid rgba(255,255,255,0.04)",
+                  borderBottom: "0.5px solid rgba(255,255,255,0.04)",
+                  boxShadow: isSelected ? "inset 0 0 0 1px rgba(93,202,165,0.25)" : "none",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)";
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) (e.currentTarget as HTMLElement).style.background = isWeekend && !isToday ? "rgba(255,255,255,0.015)" : "transparent";
+                }}
               >
                 <span
-                  className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium ${
-                    isToday
-                      ? "bg-blue-600 text-white"
+                  className="flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium"
+                  style={{
+                    background: isToday ? "linear-gradient(135deg, #1D9E75, #378ADD)" : "transparent",
+                    color: isToday
+                      ? "#fff"
                       : isPast
-                        ? isWeekend ? "text-slate-300" : "text-slate-400"
-                        : isWeekend ? "text-slate-400" : "text-slate-700"
-                  }`}
+                        ? isWeekend ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.3)"
+                        : isWeekend ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.65)",
+                  }}
                 >
                   {day}
                 </span>
@@ -374,7 +423,8 @@ export function CalendarGrid({
                     return (
                       <span
                         key={a.intervalsActivityId}
-                        className={`truncate rounded px-1 py-px text-[9px] font-semibold leading-tight ${c.bg} ${c.text}`}
+                        className="truncate rounded px-1 py-px text-[9px] font-semibold leading-tight"
+                        style={{ background: c.bg, color: c.text }}
                       >
                         {shortType(a.type)}
                         {a.durationSec && !compact ? ` ${fmtDuration(a.durationSec)}` : ""}
@@ -384,7 +434,8 @@ export function CalendarGrid({
                   {entry?.planned.slice(0, compact ? 1 : 2).map((w) => (
                     <span
                       key={`${w.date}-${w.name}`}
-                      className="truncate rounded border border-dashed border-violet-300 px-1 py-px text-[9px] font-semibold leading-tight text-violet-600"
+                      className="truncate rounded px-1 py-px text-[9px] font-semibold leading-tight"
+                      style={{ border: "0.5px dashed rgba(93,202,165,0.45)", color: "#5DCAA5" }}
                     >
                       {compact ? shortType(w.type) : w.name}
                     </span>

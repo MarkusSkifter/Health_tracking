@@ -30,16 +30,22 @@ export function DeleteWorkoutButton({
   if (state === "confirm") {
     return (
       <div className="flex items-center gap-1.5">
-        <span className="text-[11px] text-slate-500">Remove?</span>
+        <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>Remove?</span>
         <button
           onClick={doDelete}
-          className="rounded px-2 py-0.5 text-[11px] font-semibold text-rose-600 hover:bg-rose-50"
+          className="rounded px-2 py-0.5 text-[11px] font-semibold transition-colors"
+          style={{ color: "#F87171" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(248,113,113,0.12)"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
         >
           Yes
         </button>
         <button
           onClick={() => setState("idle")}
-          className="rounded px-2 py-0.5 text-[11px] text-slate-400 hover:bg-slate-100"
+          className="rounded px-2 py-0.5 text-[11px] transition-colors"
+          style={{ color: "rgba(255,255,255,0.35)" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.06)"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
         >
           No
         </button>
@@ -48,18 +54,27 @@ export function DeleteWorkoutButton({
   }
 
   if (state === "deleting") {
-    return <span className="text-[11px] text-slate-400">Removing…</span>;
+    return <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>Removing…</span>;
   }
 
   if (state === "error") {
-    return <span className="text-[11px] text-rose-500">{err}</span>;
+    return <span className="text-[11px]" style={{ color: "#F87171" }}>{err}</span>;
   }
 
   return (
     <button
       onClick={() => setState("confirm")}
       aria-label="Remove workout"
-      className="flex h-6 w-6 items-center justify-center rounded text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-400"
+      className="flex h-6 w-6 items-center justify-center rounded transition-colors"
+      style={{ color: "rgba(255,255,255,0.2)" }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLElement).style.background = "rgba(248,113,113,0.12)";
+        (e.currentTarget as HTMLElement).style.color = "#F87171";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.background = "transparent";
+        (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.2)";
+      }}
     >
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="3 6 5 6 21 6" />

@@ -13,6 +13,18 @@ function paceToSec(pace: string): number | null {
   return parseInt(m[1]!) * 60 + parseInt(m[2]!);
 }
 
+const inputStyle: React.CSSProperties = {
+  width: 144,
+  background: "rgba(255,255,255,0.06)",
+  border: "0.5px solid rgba(255,255,255,0.12)",
+  borderRadius: 8,
+  padding: "8px 12px",
+  fontSize: 14,
+  color: "#fff",
+  outline: "none",
+  transition: "border-color 0.15s",
+};
+
 export function TrainingSettings() {
   const [ftp, setFtp] = useState("");
   const [pace, setPace] = useState("");
@@ -64,13 +76,13 @@ export function TrainingSettings() {
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-400">Loading…</p>;
+    return <p className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>Loading…</p>;
   }
 
   return (
     <form onSubmit={save} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-semibold text-slate-600">
+        <label className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>
           Cycling FTP (watts)
         </label>
         <input
@@ -80,15 +92,15 @@ export function TrainingSettings() {
           value={ftp}
           onChange={(e) => setFtp(e.target.value)}
           placeholder="e.g. 280"
-          className="w-36 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-300 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+          style={inputStyle}
         />
-        <p className="text-[11px] text-slate-400">
+        <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>
           Used to calculate zone targets for ride suggestions (Z1=50-60%, Z4=91-105%…)
         </p>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-semibold text-slate-600">
+        <label className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>
           Run threshold pace (MM:SS per km)
         </label>
         <input
@@ -96,24 +108,25 @@ export function TrainingSettings() {
           value={pace}
           onChange={(e) => setPace(e.target.value)}
           placeholder="e.g. 4:30"
-          className="w-36 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-300 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+          style={inputStyle}
         />
-        <p className="text-[11px] text-slate-400">
+        <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>
           Your lactate threshold pace. Used to calibrate run interval targets.
         </p>
       </div>
 
-      {error && <p className="text-xs text-rose-500">{error}</p>}
+      {error && <p className="text-xs" style={{ color: "#F87171" }}>{error}</p>}
 
       <div className="flex items-center gap-3">
         <button
           type="submit"
           disabled={saving}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+          className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50"
+          style={{ background: "linear-gradient(135deg, #1D9E75, #2A7FC0)" }}
         >
           {saving ? "Saving…" : "Save"}
         </button>
-        {saved && <span className="text-xs font-medium text-emerald-600">Saved</span>}
+        {saved && <span className="text-xs font-medium" style={{ color: "#5DCAA5" }}>Saved</span>}
       </div>
     </form>
   );

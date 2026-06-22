@@ -81,8 +81,8 @@ export default async function TodayPage() {
       {/* Page header */}
       <header className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Today</p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
+          <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>Today</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-white">
             {longDate(summary.date)}
           </h1>
         </div>
@@ -103,13 +103,13 @@ export default async function TodayPage() {
       <div className="grid gap-5 lg:grid-cols-[1fr_200px]">
         <div className="flex flex-col gap-5">
           {/* Load hero */}
-          <div className="rounded-2xl border border-slate-100 bg-white p-6">
+          <div className="glass-card rounded-2xl p-6">
             <div className="flex items-end gap-5">
               <div>
-                <p className="text-6xl font-bold tabular-nums tracking-tight leading-none text-slate-900">
+                <p className="text-6xl font-bold tabular-nums tracking-tight leading-none text-white">
                   {Math.round(summary.trainingLoadDaily)}
                 </p>
-                <p className="mt-2 text-sm text-slate-400">Training load today</p>
+                <p className="mt-2 text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>Training load today</p>
               </div>
               <div className="mb-1">
                 <AcrBadge ratio={summary.acuteChronicRatio} />
@@ -118,7 +118,7 @@ export default async function TodayPage() {
 
             <div className="mt-5">
               <Sparkline values={trend.map((t) => t.trainingLoadDaily)} />
-              <div className="mt-1.5 flex justify-between text-xs text-slate-400">
+              <div className="mt-1.5 flex justify-between text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
                 <span>7d avg {Math.round(summary.load7d)}</span>
                 <span>28d avg {Math.round(summary.load28d)}</span>
               </div>
@@ -127,9 +127,9 @@ export default async function TodayPage() {
 
           {/* AI summary */}
           {summary.aiSummaryText && (
-            <div className="rounded-2xl border border-slate-100 bg-white px-6 py-5">
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Coach</p>
-              <p className="text-[15px] leading-relaxed text-slate-700">
+            <div className="glass-card rounded-2xl px-6 py-5">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>Coach</p>
+              <p className="text-[15px] leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
                 {summary.aiSummaryText}
               </p>
             </div>
@@ -142,27 +142,27 @@ export default async function TodayPage() {
             <WellnessCard
               label="HRV"
               value={wellness.hrv !== null ? `${Math.round(wellness.hrv)} ms` : null}
-              color="text-emerald-600"
+              color="#5DCAA5"
             />
             <WellnessCard
               label="Resting HR"
               value={wellness.restingHr !== null ? `${wellness.restingHr} bpm` : null}
-              color="text-rose-500"
+              color="#F87171"
             />
             <WellnessCard
               label="Sleep"
               value={wellness.sleepSec !== null ? formatSleep(wellness.sleepSec) : null}
-              color="text-violet-600"
+              color="#C084FC"
             />
             <WellnessCard
               label="Steps"
               value={wellness.steps !== null ? wellness.steps.toLocaleString("en-GB") : null}
-              color="text-amber-600"
+              color="#FCD34D"
             />
             <WellnessCard
               label="Weight"
               value={wellness.weightKg !== null ? `${wellness.weightKg.toFixed(1)} kg` : null}
-              color="text-slate-500"
+              color="rgba(255,255,255,0.4)"
             />
           </div>
         )}
@@ -172,7 +172,7 @@ export default async function TodayPage() {
       {workouts.length > 0 && (
         <section>
           <div className="mb-3 flex items-center gap-2.5">
-            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+            <h2 className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
               This week
             </h2>
           </div>
@@ -188,14 +188,17 @@ export default async function TodayPage() {
       {suggestions && (
         <section>
           <div className="mb-3 flex items-center gap-2.5">
-            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+            <h2 className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
               {workouts.length > 0 ? "AI coach" : "AI suggested week"}
             </h2>
-            <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-semibold text-violet-600">
+            <span
+              className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+              style={{ background: "rgba(192,132,252,0.15)", color: "#C084FC" }}
+            >
               AI
             </span>
           </div>
-          <p className="mb-3 text-sm text-slate-500">{suggestions.overview}</p>
+          <p className="mb-3 text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>{suggestions.overview}</p>
           <div className="flex flex-col gap-2">
             {suggestions.days.map((d) => (
               <SuggestionCard key={d.date} day={d} />
@@ -209,45 +212,28 @@ export default async function TodayPage() {
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-// Session accent: amber for runs, green for rides, muted for everything else.
-function sessionAccent(type: string | null): string {
-  switch (type) {
-    case "Run":
-    case "VirtualRun":
-      return "#b07d3a"; // amber/caramel
-    case "Ride":
-    case "VirtualRide":
-      return "#3f9142"; // green
-    default:
-      return "#a09080"; // muted warm gray
-  }
-}
-
 function PlannedWorkoutCard({ workout: w }: { workout: PlannedWorkout }) {
   const dayName = DAY_NAMES[new Date(`${w.date}T00:00:00`).getDay()];
   const duration = fmtDuration(w.plannedDurationSec);
   return (
-    <div
-      className="rounded-2xl border border-slate-100 border-l-[3px] bg-white px-4 py-3.5"
-      style={{ borderLeftColor: sessionAccent(w.type) }}
-    >
+    <div className="glass-card rounded-2xl px-4 py-3.5">
       <div className="flex items-start gap-4">
         <div className="w-9 shrink-0 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{dayName}</p>
-          <p className="text-sm font-bold text-slate-900">{w.date.slice(8)}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.35)" }}>{dayName}</p>
+          <p className="text-sm font-bold text-white">{w.date.slice(8)}</p>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-slate-900">{w.name}</p>
-          <div className="mt-0.5 flex gap-3 text-xs text-slate-400">
+          <p className="text-sm font-medium text-white">{w.name}</p>
+          <div className="mt-0.5 flex gap-3 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
             {w.type && <span>{w.type}</span>}
             {duration && <span>{duration}</span>}
             {w.plannedLoad != null && w.plannedLoad > 0 && (
-              <span className="font-semibold text-slate-500">load {Math.round(w.plannedLoad)}</span>
+              <span className="font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>load {Math.round(w.plannedLoad)}</span>
             )}
           </div>
           {w.description && (
             <>
-              <p className="mt-1 text-xs leading-relaxed text-slate-400">{w.description}</p>
+              <p className="mt-1 text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.35)" }}>{w.description}</p>
               <WorkoutBars description={w.description} />
             </>
           )}
@@ -265,24 +251,27 @@ function SuggestionCard({ day: d }: { day: AiDaySuggestion }) {
   const duration = fmtDuration(d.plannedDurationSec);
   const isRest = d.type === "Rest" || d.plannedLoad === 0;
   return (
-    <div className="flex items-start gap-4 rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-3.5">
+    <div
+      className="flex items-start gap-4 rounded-2xl px-4 py-3.5"
+      style={{ border: "0.5px dashed rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.02)" }}
+    >
       <div className="w-9 shrink-0 text-center">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{dayName}</p>
-        <p className="text-sm font-bold text-slate-900">{d.date.slice(8)}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.35)" }}>{dayName}</p>
+        <p className="text-sm font-bold text-white">{d.date.slice(8)}</p>
       </div>
       <div className="min-w-0 flex-1">
-        <p className={`text-sm font-medium ${isRest ? "text-slate-400" : "text-slate-900"}`}>
+        <p className={`text-sm font-medium ${isRest ? "" : "text-white"}`} style={isRest ? { color: "rgba(255,255,255,0.35)" } : {}}>
           {d.name}
         </p>
-        <p className="mt-0.5 text-xs leading-relaxed text-slate-400">{d.rationale}</p>
+        <p className="mt-0.5 text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.35)" }}>{d.rationale}</p>
         {!isRest && d.description && <WorkoutBars description={d.description} />}
       </div>
       {!isRest && (
         <div className="flex shrink-0 flex-col items-end gap-2">
-          <div className="flex gap-3 text-xs text-slate-400">
+          <div className="flex gap-3 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
             {duration && <span>{duration}</span>}
             {d.plannedLoad > 0 && (
-              <span className="font-semibold text-slate-600">
+              <span className="font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>
                 load {Math.round(d.plannedLoad)}
               </span>
             )}
@@ -296,9 +285,12 @@ function SuggestionCard({ day: d }: { day: AiDaySuggestion }) {
 
 function WellnessCard({ label, value, color }: { label: string; value: string | null; color: string }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white px-4 py-4">
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">{label}</p>
-      <p className={`mt-1.5 text-lg font-bold tabular-nums ${value ? color : "text-slate-200"}`}>
+    <div className="glass-card rounded-2xl px-4 py-4">
+      <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>{label}</p>
+      <p
+        className="mt-1.5 text-lg font-bold tabular-nums"
+        style={{ color: value ? color : "rgba(255,255,255,0.15)" }}
+      >
         {value ?? "—"}
       </p>
     </div>
@@ -308,13 +300,16 @@ function WellnessCard({ label, value, color }: { label: string; value: string | 
 function EmptyState({ title, message }: { title: string; message: string }) {
   return (
     <main className="flex min-h-[60dvh] flex-col items-center justify-center gap-3 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <div
+        className="flex h-12 w-12 items-center justify-center rounded-2xl"
+        style={{ background: "rgba(255,255,255,0.06)" }}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
         </svg>
       </div>
-      <h1 className="text-base font-semibold text-slate-900">{title}</h1>
-      <p className="max-w-xs text-sm text-slate-400">{message}</p>
+      <h1 className="text-base font-semibold text-white">{title}</h1>
+      <p className="max-w-xs text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>{message}</p>
     </main>
   );
 }

@@ -45,7 +45,15 @@ const items = [
 export function BottomNav() {
   const pathname = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-slate-100 bg-white/95 backdrop-blur-sm md:hidden">
+    <nav
+      className="fixed inset-x-0 bottom-0 z-50 md:hidden"
+      style={{
+        background: "rgba(6,6,8,0.88)",
+        borderTop: "0.5px solid rgba(255,255,255,0.06)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+      }}
+    >
       <div className="mx-auto flex max-w-md items-stretch justify-around">
         {items.map((item) => {
           const active =
@@ -54,9 +62,8 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-medium transition-colors ${
-                active ? "text-blue-600" : "text-slate-400"
-              }`}
+              className="flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-medium transition-colors"
+              style={{ color: active ? "#5DCAA5" : "rgba(255,255,255,0.3)" }}
             >
               {item.icon(active)}
               {item.label}

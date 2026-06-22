@@ -3,8 +3,9 @@ import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { BottomNav } from "./components/BottomNav";
+import { FluidBackground } from "./components/FluidBackground";
 import { ServiceWorkerRegister } from "./components/ServiceWorkerRegister";
-import { SideNav } from "./components/SideNav";
+import { TopNav } from "./components/TopNav";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -15,13 +16,13 @@ export const metadata: Metadata = {
   icons: { icon: "/icon.svg" },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Training Insights",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#faf7f2",
+  themeColor: "#060608",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -29,11 +30,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${inter.className} bg-[#faf7f2]`}>
+    <html lang="en" className={inter.className}>
       <body>
-        <SideNav />
-        <div className="md:pl-60">
-          <div className="mx-auto max-w-4xl px-5 pt-8 pb-28 md:px-10 md:pt-10 md:pb-12">
+        <FluidBackground />
+        <TopNav />
+        <div className="relative z-10">
+          <div className="mx-auto max-w-4xl px-5 pt-20 pb-28 md:px-10 md:pt-20 md:pb-12">
             {children}
           </div>
         </div>
