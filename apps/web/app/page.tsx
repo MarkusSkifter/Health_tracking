@@ -2,6 +2,7 @@ import type { Activity, AiDaySuggestion, AiWeekPlan, PlannedWorkout, TodayRespon
 import { fetchActivities, fetchEvents, fetchToday, fetchUpcoming } from "../lib/api";
 import { AcceptButton } from "./components/AcceptButton";
 import { AcrBadge } from "./components/AcrBadge";
+import { DeleteWorkoutButton } from "./components/DeleteWorkoutButton";
 import { ExpandableCalendar } from "./components/ExpandableCalendar";
 import { Sparkline } from "./components/Sparkline";
 import { SyncButton } from "./components/SyncButton";
@@ -234,6 +235,12 @@ function PlannedWorkoutCard({ workout: w }: { workout: PlannedWorkout }) {
             </>
           )}
         </div>
+        {w.id != null && (
+          <DeleteWorkoutButton
+            eventId={w.id}
+            onDeleted={() => window.location.reload()}
+          />
+        )}
       </div>
     </div>
   );

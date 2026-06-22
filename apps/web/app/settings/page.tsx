@@ -1,4 +1,5 @@
 import { ImportHistoryButton } from "../components/ImportHistoryButton";
+import { TrainingSettings } from "../components/TrainingSettings";
 
 export default function SettingsPage() {
   return (
@@ -22,6 +23,14 @@ export default function SettingsPage() {
             The daily sync keeps a rolling 7-day window. Use this to backfill your full history from intervals.icu — up to one year of activities and wellness data.
           </p>
           <ImportHistoryButton />
+        </section>
+
+        <section className="rounded-2xl border border-slate-100 bg-white p-6">
+          <h2 className="text-sm font-semibold text-slate-900">Training thresholds</h2>
+          <p className="mt-1.5 mb-5 text-sm leading-relaxed text-slate-500">
+            Set your FTP and run threshold pace so the AI coach can tailor interval targets and zone descriptions to your fitness level.
+          </p>
+          <TrainingSettings />
         </section>
 
         <section className="rounded-2xl border border-slate-100 bg-white p-6">

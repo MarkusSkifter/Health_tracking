@@ -96,12 +96,19 @@ export interface AiWeekPlan {
 
 /** A planned workout from the intervals.icu calendar. */
 export interface PlannedWorkout {
+  id: number | null;
   date: IsoDate;
   name: string;
   type: string | null;
   plannedDurationSec: number | null;
   plannedLoad: number | null;
   description: string | null;
+}
+
+/** User-configurable training thresholds. */
+export interface UserSettings {
+  ftpWatts: number | null;
+  runThresholdSec: number | null;
 }
 
 /** Claude model used for the daily summary (SPEC §7). */

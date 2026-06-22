@@ -118,6 +118,20 @@ export const dailySummary = pgTable(
   (t) => [uniqueIndex().on(t.userId, t.date)],
 );
 
+export const userSettings = pgTable(
+  "user_settings",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    userId: integer()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    ftpWatts: integer(),
+    runThresholdSec: integer(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex().on(t.userId)],
+);
+
 // Row-type helpers for use across the API.
 export type UserRow = typeof users.$inferSelect;
 export type ActivityRow = typeof activities.$inferSelect;
