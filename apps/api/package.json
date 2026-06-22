@@ -15,6 +15,7 @@
     "job:daily": "tsx src/jobs/daily.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
+    "db:bootstrap": "tsx src/db/bootstrap.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:inspect": "tsx src/db/inspect.ts"

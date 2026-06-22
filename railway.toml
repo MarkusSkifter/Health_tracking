@@ -2,4 +2,5 @@
 builder = "railpack"
 
 [deploy]
+releaseCommand = "pnpm --filter @health/api db:bootstrap"
 startCommand = "pnpm --filter @health/api start"

@@ -236,10 +236,7 @@ function PlannedWorkoutCard({ workout: w }: { workout: PlannedWorkout }) {
           )}
         </div>
         {w.id != null && (
-          <DeleteWorkoutButton
-            eventId={w.id}
-            onDeleted={() => window.location.reload()}
-          />
+          <DeleteWorkoutButton eventId={w.id} />
         )}
       </div>
     </div>

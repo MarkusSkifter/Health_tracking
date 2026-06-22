@@ -1,14 +1,16 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function DeleteWorkoutButton({
   eventId,
-  onDeleted,
+  onSuccess,
 }: {
   eventId: number;
-  onDeleted?: () => void;
+  onSuccess?: () => void;
 }) {
+  const router = useRouter();
   const [state, setState] = useState<"idle" | "confirm" | "deleting" | "error">("idle");
   const [err, setErr] = useState<string | null>(null);
 
@@ -16,7 +18,8 @@ export function DeleteWorkoutButton({
     setState("deleting");
     const res = await fetch(`/api/events/${eventId}`, { method: "DELETE" });
     if (res.ok) {
-      onDeleted?.();
+      onSuccess?.();
+      router.refresh();
     } else {
       const b = await res.json().catch(() => ({})) as { error?: string };
       setErr(b.error ?? "Failed to delete");
