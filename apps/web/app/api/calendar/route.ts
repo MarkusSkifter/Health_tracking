@@ -12,10 +12,12 @@ export async function POST(request: Request) {
       body: JSON.stringify(day),
     });
     if (!res.ok) {
-      return NextResponse.json({ error: "Failed to create event" }, { status: 502 });
+      const body = await res.json().catch(() => ({})) as { error?: string };
+      return NextResponse.json({ error: body.error ?? `API error ${res.status}` }, { status: 502 });
     }
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "Could not reach API" }, { status: 502 });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Could not reach API";
+    return NextResponse.json({ error: msg }, { status: 502 });
   }
 }
