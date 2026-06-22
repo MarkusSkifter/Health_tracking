@@ -2,6 +2,7 @@
 
 import type { Activity, PlannedWorkout } from "@health/shared";
 import { useState } from "react";
+import { WorkoutBars } from "./WorkoutBars";
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
   Ride: { bg: "bg-amber-50", text: "text-amber-700" },
@@ -235,7 +236,10 @@ function DetailPanel({ detail, onClose }: { detail: DayDetail; onClose: () => vo
                         )}
                       </div>
                       {w.description && (
-                        <p className="mt-1 pl-1 text-xs leading-relaxed text-slate-400">{w.description}</p>
+                        <>
+                          <p className="mt-1 pl-1 text-xs leading-relaxed text-slate-400">{w.description}</p>
+                          <WorkoutBars description={w.description} />
+                        </>
                       )}
                     </div>
                   ))}
