@@ -2,6 +2,7 @@ import type { Activity, AiDaySuggestion, AiWeekPlan, PlannedWorkout, TodayRespon
 import { fetchActivities, fetchEvents, fetchToday, fetchUpcoming } from "../lib/api";
 import { AcceptButton } from "./components/AcceptButton";
 import { AcrBadge } from "./components/AcrBadge";
+import { AcrProjectionChart } from "./components/AcrProjectionChart";
 import { DeleteWorkoutButton } from "./components/DeleteWorkoutButton";
 import { ExpandableCalendar } from "./components/ExpandableCalendar";
 import { Sparkline } from "./components/Sparkline";
@@ -167,6 +168,9 @@ export default async function TodayPage() {
           </div>
         )}
       </div>
+
+      {/* ACR projection chart */}
+      <AcrProjectionChart />
 
       {/* Real planned workouts from intervals.icu */}
       {workouts.length > 0 && (

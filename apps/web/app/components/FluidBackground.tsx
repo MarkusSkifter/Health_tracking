@@ -19,12 +19,12 @@ interface Blob {
 }
 
 const BLOBS: Blob[] = [
-  { bx: 0.78, by: 0.07, sx: 0.38, sy: 0.31, px: 0.0, py: 1.10, ax: 0.08, ay: 0.06, r: 420, r1: 29,  g1: 158, b1: 117, alpha: 0.75 },
-  { bx: 0.94, by: 0.04, sx: 0.22, sy: 0.44, px: 2.4, py: 0.80, ax: 0.05, ay: 0.09, r: 360, r1: 55,  g1: 138, b1: 221, alpha: 0.65 },
-  { bx: 0.70, by: 0.20, sx: 0.55, sy: 0.28, px: 1.7, py: 3.20, ax: 0.09, ay: 0.07, r: 300, r1: 93,  g1: 202, b1: 165, alpha: 0.55 },
-  { bx: 0.88, by: 0.17, sx: 0.41, sy: 0.60, px: 0.5, py: 2.10, ax: 0.06, ay: 0.10, r: 280, r1: 29,  g1: 158, b1: 117, alpha: 0.50 },
-  { bx: 0.82, by: 0.33, sx: 0.30, sy: 0.37, px: 3.0, py: 1.50, ax: 0.07, ay: 0.05, r: 340, r1: 55,  g1: 138, b1: 221, alpha: 0.45 },
-  { bx: 0.65, by: 0.10, sx: 0.48, sy: 0.52, px: 1.2, py: 0.40, ax: 0.06, ay: 0.08, r: 260, r1: 93,  g1: 202, b1: 165, alpha: 0.40 },
+  { bx: 0.78, by: 0.07, sx: 0.38, sy: 0.31, px: 0.0, py: 1.10, ax: 0.08, ay: 0.06, r: 420, r1: 29,  g1: 158, b1: 117, alpha: 0.38 },
+  { bx: 0.94, by: 0.04, sx: 0.22, sy: 0.44, px: 2.4, py: 0.80, ax: 0.05, ay: 0.09, r: 360, r1: 55,  g1: 138, b1: 221, alpha: 0.32 },
+  { bx: 0.70, by: 0.20, sx: 0.55, sy: 0.28, px: 1.7, py: 3.20, ax: 0.09, ay: 0.07, r: 300, r1: 93,  g1: 202, b1: 165, alpha: 0.26 },
+  { bx: 0.88, by: 0.17, sx: 0.41, sy: 0.60, px: 0.5, py: 2.10, ax: 0.06, ay: 0.10, r: 280, r1: 29,  g1: 158, b1: 117, alpha: 0.24 },
+  { bx: 0.82, by: 0.33, sx: 0.30, sy: 0.37, px: 3.0, py: 1.50, ax: 0.07, ay: 0.05, r: 340, r1: 55,  g1: 138, b1: 221, alpha: 0.20 },
+  { bx: 0.65, by: 0.10, sx: 0.48, sy: 0.52, px: 1.2, py: 0.40, ax: 0.06, ay: 0.08, r: 260, r1: 93,  g1: 202, b1: 165, alpha: 0.18 },
 ];
 
 export function FluidBackground() {
@@ -69,13 +69,22 @@ export function FluidBackground() {
         ctx.fill();
       }
 
-      // Fade to background: transparent at 30% → opaque at 65%
-      const overlay = ctx.createLinearGradient(0, 0, 0, H);
-      overlay.addColorStop(0.00, "rgba(6,6,8,0)");
-      overlay.addColorStop(0.30, "rgba(6,6,8,0)");
-      overlay.addColorStop(0.65, "rgba(6,6,8,0.94)");
-      overlay.addColorStop(1.00, "rgba(6,6,8,1)");
-      ctx.fillStyle = overlay;
+      // Vertical fade: transparent at top → opaque toward bottom
+      const vOverlay = ctx.createLinearGradient(0, 0, 0, H);
+      vOverlay.addColorStop(0.00, "rgba(6,6,8,0)");
+      vOverlay.addColorStop(0.18, "rgba(6,6,8,0.15)");
+      vOverlay.addColorStop(0.45, "rgba(6,6,8,0.88)");
+      vOverlay.addColorStop(1.00, "rgba(6,6,8,1)");
+      ctx.fillStyle = vOverlay;
+      ctx.fillRect(0, 0, W, H);
+
+      // Horizontal fade: transparent on right → dark on left, keeps glow in corner
+      const hOverlay = ctx.createLinearGradient(W, 0, 0, 0);
+      hOverlay.addColorStop(0.00, "rgba(6,6,8,0)");
+      hOverlay.addColorStop(0.30, "rgba(6,6,8,0.15)");
+      hOverlay.addColorStop(0.60, "rgba(6,6,8,0.82)");
+      hOverlay.addColorStop(1.00, "rgba(6,6,8,0.95)");
+      ctx.fillStyle = hOverlay;
       ctx.fillRect(0, 0, W, H);
 
       animId = requestAnimationFrame(draw);
