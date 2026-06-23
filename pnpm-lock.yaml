@@ -15,6 +15,9 @@ importers:
       '@types/node':
         specifier: ^26.0.0
         version: 26.0.0
+      '@types/web-push':
+        specifier: ^3.6.4
+        version: 3.6.4
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -42,16 +45,10 @@ importers:
       postgres:
         specifier: ^3.4.9
         version: 3.4.9
-      web-push:
-        specifier: ^3.6.7
-        version: 3.6.7
       zod:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
-      '@types/web-push':
-        specifier: ^3.6.4
-        version: 3.6.4
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
