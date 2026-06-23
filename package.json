@@ -14,8 +14,12 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck"
   },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  },
   "devDependencies": {
     "@types/node": "^26.0.0",
+    "@types/web-push": "^3.6.4",
     "typescript": "^6.0.3"
   }
 }
