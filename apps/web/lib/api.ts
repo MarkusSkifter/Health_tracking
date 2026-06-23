@@ -1,4 +1,4 @@
-﻿import type { Activity, AiWeekPlan, AnalyticsDay, DailySummary, PlannedWorkout, TodayResponse } from "@health/shared";
+﻿import type { Activity, AiWeekPlan, AnalyticsDay, AthleteProfile, DailySummary, PlannedWorkout, TodayResponse, TrainingGoal } from "@health/shared";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
 
@@ -58,4 +58,42 @@ export async function fetchEvents(from: string, to: string): Promise<PlannedWork
   } catch {
     return [];
   }
+}
+
+export async function fetchProfile(): Promise<AthleteProfile> {
+  const res = await fetch(`${API_BASE}/api/profile`, { cache: "no-store" });
+  if (!res.ok) return { bio: null, weeklyTrainingHours: null, trainingDaysPerWeek: null };
+  return (await res.json()) as AthleteProfile;
+}
+
+export async function saveProfile(profile: AthleteProfile): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/profile`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(profile),
+  });
+  if (!res.ok) throw new Error("Failed to save profile");
+}
+
+export async function fetchGoals(): Promise<(TrainingGoal & { isPast: boolean })[]> {
+  const res = await fetch(`${API_BASE}/api/goals`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = (await res.json()) as { goals: (TrainingGoal & { isPast: boolean })[] };
+  return data.goals;
+}
+
+export async function createGoal(goal: { eventName: string; eventType?: string | null; targetDate: string; notes?: string | null }): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/goals`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(goal),
+  });
+  if (!res.ok) throw new Error("Failed to create goal");
+  const data = (await res.json()) as { id: string };
+  return data.id;
+}
+
+export async function deleteGoal(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/goals/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete goal");
 }

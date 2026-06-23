@@ -1,5 +1,5 @@
-import type { Activity, AiDaySuggestion, AiWeekPlan, PlannedWorkout, TodayResponse } from "@health/shared";
-import { fetchActivities, fetchEvents, fetchToday, fetchUpcoming } from "../lib/api";
+import type { Activity, AiDaySuggestion, AiWeekPlan, PlannedWorkout, TodayResponse, TrainingGoal } from "@health/shared";
+import { fetchActivities, fetchEvents, fetchGoals, fetchToday, fetchUpcoming } from "../lib/api";
 import { AcceptButton } from "./components/AcceptButton";
 import { AcrBadge } from "./components/AcrBadge";
 import { AcrProjectionChart } from "./components/AcrProjectionChart";
@@ -44,19 +44,22 @@ export default async function TodayPage() {
   let suggestions: AiWeekPlan | null = null;
   let monthActivities: Activity[] = [];
   let monthPlanned: PlannedWorkout[] = [];
+  let nextGoal: (TrainingGoal & { isPast: boolean }) | null = null;
 
   try {
-    const [todayResult, upcomingResult, acts, evts] = await Promise.all([
+    const [todayResult, upcomingResult, acts, evts, goals] = await Promise.all([
       fetchToday(),
       fetchUpcoming(),
       fetchActivities(monthFrom, monthTo).catch(() => []),
       fetchEvents(monthFrom, monthTo).catch(() => []),
+      fetchGoals().catch(() => []),
     ]);
     today = todayResult;
     workouts = upcomingResult.workouts;
     suggestions = upcomingResult.suggestions;
     monthActivities = acts as typeof monthActivities;
     monthPlanned = evts;
+    nextGoal = goals.find((g) => !g.isPast) ?? null;
   } catch {
     return (
       <EmptyState
@@ -91,6 +94,9 @@ export default async function TodayPage() {
           <SyncButton />
         </div>
       </header>
+
+      {/* Nearest goal banner */}
+      {nextGoal && <GoalBanner goal={nextGoal} />}
 
       {/* 7-day strip + expandable calendar */}
       <ExpandableCalendar
@@ -296,6 +302,41 @@ function WellnessCard({ label, value, color }: { label: string; value: string | 
         style={{ color: value ? color : "rgba(255,255,255,0.15)" }}
       >
         {value ?? "—"}
+      </p>
+    </div>
+  );
+}
+
+function GoalBanner({ goal }: { goal: TrainingGoal & { isPast: boolean } }) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(`${goal.targetDate}T00:00:00`);
+  const days = Math.round((target.getTime() - today.getTime()) / 86400000);
+  const weeks = Math.round(days / 7);
+  const phase =
+    weeks > 16 ? "Base phase" :
+    weeks > 8 ? "Build phase" :
+    weeks > 4 ? "Peak phase" :
+    weeks > 2 ? "Taper" : "Race week";
+
+  return (
+    <div
+      className="flex items-center gap-4 rounded-2xl px-5 py-4"
+      style={{ background: "rgba(93,202,165,0.08)", border: "0.5px solid rgba(93,202,165,0.2)" }}
+    >
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(93,202,165,0.12)" }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5DCAA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
+        </svg>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-white">{goal.eventName}</p>
+        <p className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
+          {days > 0 ? `${days} days away · ${phase}` : days === 0 ? "Today!" : "Past"}
+        </p>
+      </div>
+      <p className="shrink-0 text-2xl font-bold tabular-nums" style={{ color: "#5DCAA5" }}>
+        {days > 0 ? days : "—"}
       </p>
     </div>
   );

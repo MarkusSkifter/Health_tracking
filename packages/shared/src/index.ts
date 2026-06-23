@@ -111,5 +111,21 @@ export interface UserSettings {
   runThresholdSec: number | null;
 }
 
+/** Athlete self-description and training context. */
+export interface AthleteProfile {
+  bio: string | null;
+  weeklyTrainingHours: number | null;
+  trainingDaysPerWeek: number | null;
+}
+
+/** A training goal (e.g. "Half marathon, September 2026"). */
+export interface TrainingGoal {
+  id: string;
+  eventName: string;
+  eventType: string | null;
+  targetDate: IsoDate;
+  notes: string | null;
+}
+
 /** Claude model used for the daily summary (SPEC §7). */
 export const SUMMARY_MODEL = "claude-haiku-4-5-20251001" as const;
