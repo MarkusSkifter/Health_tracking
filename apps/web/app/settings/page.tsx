@@ -1,6 +1,8 @@
 import { ImportHistoryButton } from "../components/ImportHistoryButton";
 import { PushNotificationToggle } from "../components/PushNotificationToggle";
 import { TrainingSettings } from "../components/TrainingSettings";
+import { AthleteProfile } from "../components/AthleteProfile";
+import { TrainingGoals } from "../components/TrainingGoals";
 
 export default function SettingsPage() {
   return (
@@ -11,6 +13,30 @@ export default function SettingsPage() {
       </header>
 
       <div className="flex flex-col gap-4">
+        <section className="glass-card rounded-2xl p-6">
+          <h2 className="text-sm font-semibold text-white">Athlete profile</h2>
+          <p className="mt-1.5 mb-5 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
+            Describe yourself and your training background. The AI coach uses this to personalise suggestions to your fitness level and schedule.
+          </p>
+          <AthleteProfile />
+        </section>
+
+        <section className="glass-card rounded-2xl p-6">
+          <h2 className="text-sm font-semibold text-white">Training goals</h2>
+          <p className="mt-1.5 mb-5 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
+            Add races or events you are training toward. The AI coach will periodize your training — base, build, peak, taper — based on how far away each goal is.
+          </p>
+          <TrainingGoals />
+        </section>
+
+        <section className="glass-card rounded-2xl p-6">
+          <h2 className="text-sm font-semibold text-white">Training thresholds</h2>
+          <p className="mt-1.5 mb-5 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
+            Set your FTP and run threshold pace so the AI coach can tailor interval targets and zone descriptions to your fitness level.
+          </p>
+          <TrainingSettings />
+        </section>
+
         <section className="glass-card rounded-2xl p-6">
           <h2 className="text-sm font-semibold text-white">Data source</h2>
           <p className="mt-1.5 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
@@ -24,14 +50,6 @@ export default function SettingsPage() {
             The daily sync keeps a rolling 7-day window. Use this to backfill your full history from intervals.icu — up to one year of activities and wellness data.
           </p>
           <ImportHistoryButton />
-        </section>
-
-        <section className="glass-card rounded-2xl p-6">
-          <h2 className="text-sm font-semibold text-white">Training thresholds</h2>
-          <p className="mt-1.5 mb-5 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
-            Set your FTP and run threshold pace so the AI coach can tailor interval targets and zone descriptions to your fitness level.
-          </p>
-          <TrainingSettings />
         </section>
 
         <section className="glass-card rounded-2xl p-6">

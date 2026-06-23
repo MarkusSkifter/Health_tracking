@@ -19,6 +19,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  uuid,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -146,6 +147,59 @@ export const pushSubscriptions = pgTable(
   },
   (t) => [uniqueIndex().on(t.userId, t.endpoint)],
 );
+
+export const corosWorkouts = pgTable(
+  "coros_workouts",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    userId: integer()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    sportType: integer(),
+    workoutId: text().notNull(),
+    startTime: integer(),
+    endTime: integer(),
+    totalTime: integer(),
+    distance: real(),
+    calories: integer(),
+    avgHr: integer(),
+    maxHr: integer(),
+    avgPower: integer(),
+    maxPower: integer(),
+    rawJson: jsonb().$type<Record<string, unknown>>().notNull(),
+    receivedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex().on(t.userId, t.workoutId)],
+);
+
+export const athleteProfiles = pgTable("athlete_profile", {
+  userId: integer("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  bio: text(),
+  weeklyTrainingHours: integer("weekly_training_hours"),
+  trainingDaysPerWeek: integer("training_days_per_week"),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
+export const trainingGoals = pgTable(
+  "training_goals",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    eventName: text("event_name").notNull(),
+    eventType: text("event_type"),
+    targetDate: date("target_date", { mode: "string" }).notNull(),
+    notes: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index().on(t.userId, t.targetDate)],
+);
+
+export type CorosWorkoutRow = typeof corosWorkouts.$inferSelect;
+export type NewCorosWorkout = typeof corosWorkouts.$inferInsert;
 
 // Row-type helpers for use across the API.
 export type UserRow = typeof users.$inferSelect;

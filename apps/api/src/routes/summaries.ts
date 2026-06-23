@@ -1,16 +1,17 @@
 ﻿import type { AiDaySuggestion } from "@health/shared";
 import type { FastifyInstance } from "fastify";
-import { eq } from "drizzle-orm";
+import { asc, eq, gte } from "drizzle-orm";
 import { ingestWindow } from "../ingest/ingest";
 import { IntervalsClient } from "../intervals/client";
 import { fetchUpcomingWorkouts } from "../intervals/upcoming";
 import { intervalsEnv } from "../env";
 import { db } from "../db/client";
-import { userSettings } from "../db/schema";
+import { athleteProfiles, trainingGoals, userSettings } from "../db/schema";
 import { getOrCreateUserId } from "../ingest/store";
 import { getActivities, getAnalytics, getHistory, getToday } from "../summary/queries";
 import { generateDailySummary } from "../summary/generate";
 import { generateWeekSuggestions } from "../summary/suggestions";
+import { isoDateInTimeZone, ATHLETE_TIMEZONE } from "../intervals/dates";
 
 /** Routes that serve the frontend (SPEC §8, §9). */
 export async function registerSummaryRoutes(app: FastifyInstance): Promise<void> {
@@ -174,6 +175,79 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
       app.log.error(err, "Failed to save settings");
       const msg = err instanceof Error ? err.message : String(err);
       return reply.code(500).send({ error: `Failed to save settings: ${msg}` });
+    }
+  });
+
+  // ── Athlete profile ───────────────────────────────────────────────────────
+  app.get("/api/profile", async (_req, reply) => {
+    try {
+      const userId = await getOrCreateUserId();
+      const rows = await db.select().from(athleteProfiles).where(eq(athleteProfiles.userId, userId)).limit(1);
+      const row = rows[0];
+      return { bio: row?.bio ?? null, weeklyTrainingHours: row?.weeklyTrainingHours ?? null, trainingDaysPerWeek: row?.trainingDaysPerWeek ?? null };
+    } catch (err) {
+      app.log.error(err, "Failed to fetch profile");
+      return reply.code(500).send({ error: "Failed to fetch profile" });
+    }
+  });
+
+  app.put<{ Body: { bio?: string | null; weeklyTrainingHours?: number | null; trainingDaysPerWeek?: number | null } }>("/api/profile", async (req, reply) => {
+    try {
+      const userId = await getOrCreateUserId();
+      const { bio, weeklyTrainingHours, trainingDaysPerWeek } = req.body;
+      const existing = await db.select({ userId: athleteProfiles.userId }).from(athleteProfiles).where(eq(athleteProfiles.userId, userId)).limit(1);
+      if (existing[0]) {
+        await db.update(athleteProfiles)
+          .set({ bio: bio ?? null, weeklyTrainingHours: weeklyTrainingHours ?? null, trainingDaysPerWeek: trainingDaysPerWeek ?? null, updatedAt: new Date() })
+          .where(eq(athleteProfiles.userId, userId));
+      } else {
+        await db.insert(athleteProfiles).values({ userId, bio: bio ?? null, weeklyTrainingHours: weeklyTrainingHours ?? null, trainingDaysPerWeek: trainingDaysPerWeek ?? null });
+      }
+      return { ok: true };
+    } catch (err) {
+      app.log.error(err, "Failed to save profile");
+      return reply.code(500).send({ error: "Failed to save profile" });
+    }
+  });
+
+  // ── Training goals ─────────────────────────────────────────────────────────
+  app.get("/api/goals", async (_req, reply) => {
+    try {
+      const userId = await getOrCreateUserId();
+      const today = isoDateInTimeZone(new Date(), ATHLETE_TIMEZONE);
+      const rows = await db.select().from(trainingGoals)
+        .where(eq(trainingGoals.userId, userId))
+        .orderBy(asc(trainingGoals.targetDate));
+      return { goals: rows.map((r) => ({ id: r.id, eventName: r.eventName, eventType: r.eventType, targetDate: r.targetDate, notes: r.notes, isPast: r.targetDate < today })) };
+    } catch (err) {
+      app.log.error(err, "Failed to fetch goals");
+      return reply.code(500).send({ error: "Failed to fetch goals" });
+    }
+  });
+
+  app.post<{ Body: { eventName: string; eventType?: string | null; targetDate: string; notes?: string | null } }>("/api/goals", async (req, reply) => {
+    try {
+      const userId = await getOrCreateUserId();
+      const { eventName, eventType, targetDate, notes } = req.body;
+      if (!eventName || !targetDate) return reply.code(400).send({ error: "eventName and targetDate are required" });
+      const rows = await db.insert(trainingGoals).values({ userId, eventName, eventType: eventType ?? null, targetDate, notes: notes ?? null }).returning();
+      const row = rows[0];
+      if (!row) return reply.code(500).send({ error: "Insert returned no row" });
+      return { ok: true, id: row.id };
+    } catch (err) {
+      app.log.error(err, "Failed to create goal");
+      return reply.code(500).send({ error: "Failed to create goal" });
+    }
+  });
+
+  app.delete<{ Params: { id: string } }>("/api/goals/:id", async (req, reply) => {
+    try {
+      const userId = await getOrCreateUserId();
+      await db.delete(trainingGoals).where(eq(trainingGoals.id, req.params.id));
+      return { ok: true };
+    } catch (err) {
+      app.log.error(err, "Failed to delete goal");
+      return reply.code(500).send({ error: "Failed to delete goal" });
     }
   });
 
