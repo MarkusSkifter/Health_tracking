@@ -4,7 +4,7 @@ import type { Activity, PlannedWorkout } from "@health/shared";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DeleteWorkoutButton } from "./DeleteWorkoutButton";
-import { WorkoutBars } from "./WorkoutBars";
+import { WorkoutBars, parseWorkout, LOAD_PER_MIN } from "./WorkoutBars";
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
   Ride:          { bg: "rgba(251,191,36,0.18)",  text: "#FCD34D" },
@@ -47,11 +47,13 @@ const WORKOUT_TYPES = ["Run", "Ride", "Swim", "Walk", "WeightTraining", "Workout
 function AddWorkoutForm({ date, onCancel, onSaved }: { date: string; onCancel: () => void; onSaved: () => void }) {
   const [name, setName] = useState("");
   const [type, setType] = useState("Run");
-  const [durationMin, setDurationMin] = useState("");
-  const [load, setLoad] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const blocks = description.trim() ? parseWorkout(description) : [];
+  const totalMin = blocks.length ? Math.round(blocks.reduce((s, b) => s + b.minutes, 0)) : null;
+  const estimatedLoad = blocks.length ? Math.round(blocks.reduce((s, b) => s + b.minutes * LOAD_PER_MIN[b.zone], 0)) : null;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -66,8 +68,8 @@ function AddWorkoutForm({ date, onCancel, onSaved }: { date: string; onCancel: (
           date,
           name: name.trim(),
           type: type || undefined,
-          durationMin: durationMin ? Number(durationMin) : undefined,
-          load: load ? Number(load) : undefined,
+          durationMin: totalMin ?? undefined,
+          load: estimatedLoad ?? undefined,
           description: description.trim() || undefined,
         }),
       });
@@ -96,18 +98,17 @@ function AddWorkoutForm({ date, onCancel, onSaved }: { date: string; onCancel: (
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <input
-        style={inputStyle}
-        placeholder="Workout name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        required
-        autoFocus
-      />
-
       <div className="flex gap-2">
-        <select
+        <input
           style={{ ...inputStyle, flex: 1 }}
+          placeholder="Workout name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          autoFocus
+        />
+        <select
+          style={{ ...inputStyle, width: "auto", flexShrink: 0 }}
           value={type}
           onChange={(e) => setType(e.target.value)}
         >
@@ -115,30 +116,28 @@ function AddWorkoutForm({ date, onCancel, onSaved }: { date: string; onCancel: (
             <option key={t} value={t} style={{ background: "#0f0f12" }}>{t === "WeightTraining" ? "Weights" : t}</option>
           ))}
         </select>
-        <input
-          style={{ ...inputStyle, width: 80 }}
-          type="number"
-          placeholder="min"
-          min="1"
-          value={durationMin}
-          onChange={(e) => setDurationMin(e.target.value)}
-        />
-        <input
-          style={{ ...inputStyle, width: 72 }}
-          type="number"
-          placeholder="load"
-          min="0"
-          value={load}
-          onChange={(e) => setLoad(e.target.value)}
-        />
       </div>
 
       <textarea
-        style={{ ...inputStyle, minHeight: 80, resize: "vertical", fontFamily: "monospace", fontSize: 12, lineHeight: 1.6 }}
+        style={{ ...inputStyle, minHeight: 96, resize: "vertical", fontFamily: "monospace", fontSize: 12, lineHeight: 1.6 }}
         placeholder={"e.g. 15min Z1\n3x(8min @ threshold, 3min easy)\n10min cooldown"}
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
+
+      {blocks.length > 0 && (
+        <div className="rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.04)", border: "0.5px solid rgba(255,255,255,0.08)" }}>
+          <WorkoutBars description={description} />
+          <div className="mt-2 flex gap-3">
+            <span className="text-xs font-semibold tabular-nums" style={{ color: "rgba(255,255,255,0.55)" }}>
+              {totalMin} min
+            </span>
+            <span className="text-xs tabular-nums" style={{ color: "rgba(255,255,255,0.3)" }}>
+              ~{estimatedLoad} load
+            </span>
+          </div>
+        </div>
+      )}
 
       {error && <p className="text-xs" style={{ color: "#F87171" }}>{error}</p>}
 

@@ -16,7 +16,10 @@ const ZONE_TEXT: Record<Zone, string> = {
 };
 const ZONE_LABEL: Record<Zone, string> = { 1: "Z1", 2: "Z2", 3: "Z3", 4: "Z4", 5: "Z5" };
 
-interface Block { minutes: number; zone: Zone; }
+export interface Block { minutes: number; zone: Zone; }
+
+// Approximate training-load contribution per minute in each zone (TSS-style scale)
+export const LOAD_PER_MIN: Record<Zone, number> = { 1: 0.4, 2: 0.7, 3: 1.0, 4: 1.5, 5: 2.0 };
 
 function pctToZone(avg: number): Zone {
   if (avg > 105) return 5;
