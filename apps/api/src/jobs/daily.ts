@@ -6,6 +6,7 @@
  */
 import { ingestWindow } from "../ingest/ingest";
 import { generateDailySummary } from "../summary/generate";
+import { sendDailyPush } from "../routes/push";
 
 const ingest = await ingestWindow(7);
 console.log("Ingest complete:", ingest);
@@ -18,5 +19,15 @@ console.log(
     : `Summary generated for ${summary.date}:`,
 );
 console.log(summary.aiSummaryText);
+
+// Send push notification when a new summary was generated (not when skipped).
+if (!summary.skipped) {
+  try {
+    await sendDailyPush(summary.date, summary.aiSummaryText);
+    console.log("Push notifications sent.");
+  } catch (err) {
+    console.error("Push notifications failed (non-fatal):", err);
+  }
+}
 
 process.exit(0);

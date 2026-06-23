@@ -132,6 +132,21 @@ export const userSettings = pgTable(
   (t) => [uniqueIndex().on(t.userId)],
 );
 
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    userId: integer()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    endpoint: text().notNull(),
+    p256dh: text().notNull(),
+    auth: text().notNull(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex().on(t.userId, t.endpoint)],
+);
+
 // Row-type helpers for use across the API.
 export type UserRow = typeof users.$inferSelect;
 export type ActivityRow = typeof activities.$inferSelect;

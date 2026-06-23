@@ -1,4 +1,5 @@
 import { ImportHistoryButton } from "../components/ImportHistoryButton";
+import { PushNotificationToggle } from "../components/PushNotificationToggle";
 import { TrainingSettings } from "../components/TrainingSettings";
 
 export default function SettingsPage() {
@@ -31,6 +32,14 @@ export default function SettingsPage() {
             Set your FTP and run threshold pace so the AI coach can tailor interval targets and zone descriptions to your fitness level.
           </p>
           <TrainingSettings />
+        </section>
+
+        <section className="glass-card rounded-2xl p-6">
+          <h2 className="mb-4 text-sm font-semibold text-white">Daily notifications</h2>
+          <PushNotificationToggle />
+          <p className="mt-4 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+            On iPhone, the app must be added to your Home Screen first: tap the Share icon in Safari, then "Add to Home Screen."
+          </p>
         </section>
 
         <section className="glass-card rounded-2xl p-6">

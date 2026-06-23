@@ -1,5 +1,6 @@
 import cors from "@fastify/cors";
 import Fastify, { type FastifyInstance } from "fastify";
+import { registerPushRoutes } from "./routes/push";
 import { registerSummaryRoutes } from "./routes/summaries";
 
 /**
@@ -20,6 +21,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   }));
 
   await registerSummaryRoutes(app);
+  await registerPushRoutes(app);
 
   return app;
 }
