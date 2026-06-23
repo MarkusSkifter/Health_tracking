@@ -48,8 +48,8 @@ export function BottomNav() {
     <nav
       className="fixed inset-x-0 bottom-0 z-50 md:hidden"
       style={{
-        background: "rgba(6,6,8,0.88)",
-        borderTop: "0.5px solid rgba(255,255,255,0.06)",
+        background: "rgba(6,6,8,0.9)",
+        borderTop: "0.5px solid var(--line)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
       }}
@@ -62,9 +62,19 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-medium transition-colors"
-              style={{ color: active ? "#5DCAA5" : "rgba(255,255,255,0.3)" }}
+              className="relative flex flex-1 flex-col items-center gap-1 py-3 transition-colors"
+              style={{
+                fontFamily: "var(--type-mono)",
+                fontSize: 9.5,
+                fontWeight: 500,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: active ? "#5DCAA5" : "rgba(255,255,255,0.3)",
+              }}
             >
+              {active && (
+                <span className="absolute inset-x-7 top-0 h-px" style={{ background: "#5DCAA5" }} />
+              )}
               {item.icon(active)}
               {item.label}
             </Link>

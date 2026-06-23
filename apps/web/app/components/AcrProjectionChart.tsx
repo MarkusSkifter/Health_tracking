@@ -98,17 +98,15 @@ export async function AcrProjectionChart() {
   const currentAcr = [...histPoints].reverse().find(p => p.date <= today)?.acr ?? null;
 
   return (
-    <div className="glass-card rounded-2xl px-5 py-4">
+    <div className="panel px-5 py-4">
       <div className="mb-3 flex items-baseline justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
-          Acute:Chronic Ratio
-        </p>
+        <span className="chan">Ratio · 28d history → 14d forecast</span>
         {currentAcr !== null && (
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold" style={{ color: zoneColor(currentAcr) }}>
+            <span className="chan" style={{ color: zoneColor(currentAcr) }}>
               {zoneLabel(currentAcr)}
             </span>
-            <span className="text-sm font-bold tabular-nums" style={{ color: zoneColor(currentAcr) }}>
+            <span className="stat text-base" style={{ color: zoneColor(currentAcr) }}>
               {currentAcr.toFixed(2)}
             </span>
           </div>
@@ -117,8 +115,8 @@ export async function AcrProjectionChart() {
 
       <AcrChartClient points={points} todayDate={today} />
 
-      <p className="mt-2 text-[10px]" style={{ color: "rgba(255,255,255,0.25)" }}>
-        Optimal zone 0.8–1.3 · dashed = projection based on planned workouts
+      <p className="readout mt-2.5 text-[10px]" style={{ color: "var(--fg-4)" }}>
+        Optimal 0.8–1.3 · dashed = projection from planned load
       </p>
     </div>
   );

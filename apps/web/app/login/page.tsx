@@ -50,11 +50,12 @@ function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
           style={{
             width: "100%",
-            background: "rgba(255,255,255,0.06)",
-            border: "0.5px solid rgba(255,255,255,0.12)",
+            background: "var(--ink-3)",
+            border: "0.5px solid var(--line-2)",
             borderRadius: 8,
             padding: "10px 14px",
             fontSize: 14,
+            fontFamily: "var(--type-mono)",
             color: "#fff",
             outline: "none",
             transition: "border-color 0.15s",
@@ -63,13 +64,20 @@ function LoginForm() {
         />
       </div>
 
-      {error && <p className="text-sm" style={{ color: "#F87171" }}>{error}</p>}
+      {error && <p className="readout text-sm" style={{ color: "#F87171" }}>{error}</p>}
 
       <button
         type="submit"
         disabled={loading || !password}
-        className="rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
-        style={{ background: "linear-gradient(135deg, #1D9E75, #2A7FC0)" }}
+        className="rounded-lg px-4 py-2.5 text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+        style={{
+          fontFamily: "var(--type-mono)",
+          fontSize: 12,
+          fontWeight: 600,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          background: "linear-gradient(135deg, #1D9E75, #2A7FC0)",
+        }}
       >
         {loading ? "Signing in…" : "Sign in"}
       </button>
@@ -96,20 +104,16 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-sm">
         <div className="mb-8 flex items-center gap-3">
           <div
-            className="flex h-9 w-9 items-center justify-center rounded-xl"
-            style={{ background: "linear-gradient(135deg, #1D9E75, #378ADD)" }}
+            className="flex h-9 w-9 items-center justify-center rounded-md"
+            style={{ background: "var(--ink-3)", border: "0.5px solid var(--line-2)" }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5dcaa5" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
             </svg>
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
-              Training
-            </p>
-            <h1 className="text-xl font-bold tracking-tight text-white leading-none">
-              Insights
-            </h1>
+            <p className="chan">Training</p>
+            <h1 className="stat mt-0.5 text-xl text-white">Insights</h1>
           </div>
         </div>
         <Suspense>

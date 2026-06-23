@@ -40,6 +40,7 @@ export const intervalsEventSchema = z.object({
   icu_training_load: z.number().nullish(),
   description: z.string().nullish(),
   category: z.string().nullish(),
+  plan_id: z.number().nullish(),
 });
 
 export type IntervalsActivity = z.infer<typeof intervalsActivitySchema>;

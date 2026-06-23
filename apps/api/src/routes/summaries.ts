@@ -93,6 +93,7 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
         if (!e.type && !e.name) continue;
         workouts.push({
           id: e.id ?? null,
+          planId: e.plan_id ?? null,
           date: e.start_date_local.slice(0, 10),
           name: e.name ?? e.type ?? "Workout",
           type: e.type ?? null,

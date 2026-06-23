@@ -97,6 +97,7 @@ export interface AiWeekPlan {
 /** A planned workout from the intervals.icu calendar. */
 export interface PlannedWorkout {
   id: number | null;
+  planId: number | null;
   date: IsoDate;
   name: string;
   type: string | null;

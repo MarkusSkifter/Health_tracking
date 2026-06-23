@@ -56,29 +56,32 @@ export function TopNav() {
       className="fixed inset-x-0 top-0 z-50 flex items-center justify-between px-5 md:px-8"
       style={{
         height: 56,
-        background: "rgba(6,6,8,0.72)",
-        borderBottom: "0.5px solid rgba(255,255,255,0.06)",
+        background: "rgba(6,6,8,0.78)",
+        borderBottom: "0.5px solid var(--line)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
       }}
     >
-      {/* Logo */}
+      {/* Wordmark — a machined instrument tile */}
       <div className="flex items-center gap-2.5">
         <div
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-          style={{ background: "linear-gradient(135deg, #1D9E75, #378ADD)" }}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
+          style={{ background: "var(--ink-3)", border: "0.5px solid var(--line-2)" }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5dcaa5" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
           </svg>
         </div>
-        <span className="hidden text-sm font-semibold tracking-tight text-white md:block">
+        <span
+          className="hidden text-white md:block"
+          style={{ fontFamily: "var(--type-mono)", fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase" }}
+        >
           Training Insights
         </span>
       </div>
 
-      {/* Center nav — hidden on mobile */}
-      <ul className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-0.5 md:flex">
+      {/* Channel selector — hidden on mobile */}
+      <ul className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex">
         {items.map((item) => {
           const active =
             item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -86,8 +89,15 @@ export function TopNav() {
             <li key={item.href}>
               <Link
                 href={item.href}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors"
-                style={{ color: active ? "#5DCAA5" : "rgba(255,255,255,0.4)" }}
+                className="relative flex items-center gap-1.5 px-3 py-1.5 transition-colors"
+                style={{
+                  fontFamily: "var(--type-mono)",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: active ? "#5DCAA5" : "rgba(255,255,255,0.4)",
+                }}
                 onMouseEnter={(e) => {
                   if (!active) (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.8)";
                 }}
@@ -97,6 +107,12 @@ export function TopNav() {
               >
                 {item.icon}
                 {item.label}
+                {active && (
+                  <span
+                    className="absolute inset-x-2.5 -bottom-px h-px"
+                    style={{ background: "#5DCAA5" }}
+                  />
+                )}
               </Link>
             </li>
           );
@@ -107,8 +123,15 @@ export function TopNav() {
       <button
         onClick={logout}
         aria-label="Sign out"
-        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors"
-        style={{ color: "rgba(255,255,255,0.35)" }}
+        className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 transition-colors"
+        style={{
+          fontFamily: "var(--type-mono)",
+          fontSize: 11,
+          fontWeight: 500,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          color: "rgba(255,255,255,0.35)",
+        }}
         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.75)"; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.35)"; }}
       >

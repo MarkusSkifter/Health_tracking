@@ -136,15 +136,13 @@ export function ExpandableCalendar({
   return (
     <div>
       {/* 7-day strip */}
-      <div className="glass-card rounded-2xl p-4">
+      <div className="panel p-4">
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
-            This week
-          </p>
+          <span className="chan">This week</span>
           <button
             onClick={toggle}
-            className="flex items-center gap-1 text-xs font-medium transition-colors"
-            style={{ color: "#5DCAA5" }}
+            className="flex items-center gap-1 transition-colors"
+            style={{ color: "#5DCAA5", fontFamily: "var(--type-mono)", fontSize: 11, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" }}
           >
             {isExpanded ? (
               <>
@@ -269,7 +267,7 @@ export function ExpandableCalendar({
                       {fmtMin(w.plannedDurationSec) && (
                         <span className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>{fmtMin(w.plannedDurationSec)}</span>
                       )}
-                      {w.id != null && (
+                      {w.id != null && w.planId == null && (
                         <span className="ml-auto">
                           <DeleteWorkoutButton
                             eventId={w.id}
@@ -290,10 +288,10 @@ export function ExpandableCalendar({
       {/* Expandable full calendar */}
       <div className={`cal-expand${isExpanded ? " open" : ""} mt-2`}>
         <div className="cal-inner">
-          <div className="glass-card rounded-2xl p-4 pt-5">
+          <div className="panel p-4 pt-5">
             {/* Month navigation */}
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-white">
+              <h2 className="stat text-lg text-white">
                 {MONTH_NAMES[(calMonth - 1)]} {calYear}
               </h2>
               <div className="flex items-center gap-1">

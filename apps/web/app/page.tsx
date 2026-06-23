@@ -1,360 +1,329 @@
-import type { Activity, AiDaySuggestion, AiWeekPlan, PlannedWorkout, TodayResponse, TrainingGoal } from "@health/shared";
-import { fetchActivities, fetchEvents, fetchGoals, fetchToday, fetchUpcoming } from "../lib/api";
-import { AcceptButton } from "./components/AcceptButton";
-import { AcrBadge } from "./components/AcrBadge";
-import { AcrProjectionChart } from "./components/AcrProjectionChart";
-import { DeleteWorkoutButton } from "./components/DeleteWorkoutButton";
-import { ExpandableCalendar } from "./components/ExpandableCalendar";
-import { Sparkline } from "./components/Sparkline";
-import { SyncButton } from "./components/SyncButton";
-import { WorkoutBars } from "./components/WorkoutBars";
+import type { AiWeekPlan, AnalyticsDay, PlannedWorkout, TodayResponse, TrainingGoal } from "@health/shared";
+import { fetchAnalytics, fetchGoals, fetchToday, fetchUpcoming } from "../lib/api";
+import { LedgerDashboard, type LedgerData } from "./components/ledger/LedgerDashboard";
+import { buildFitnessSeries, computeReadiness, densifyLoads, readinessVerdict, type FitnessPoint } from "./components/ledger/fitness";
+import { classifySession, shortDay, type IntensityKey } from "./components/ledger/shared";
+import type { VitalTile } from "./components/ledger/VitalsMatrix";
+import type { RibbonDay } from "./components/ledger/WeekRibbon";
+import type { MacroWeek } from "./components/ledger/Macrocycle";
 
 export const revalidate = 60;
 
-function longDate(iso: string): string {
-  return new Intl.DateTimeFormat("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date(`${iso}T00:00:00`));
+function iso(d: Date): string {
+  return d.toISOString().slice(0, 10);
 }
-
-function formatSleep(sec: number): string {
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+function addDays(isoDate: string, n: number): string {
+  const d = new Date(`${isoDate}T00:00:00`);
+  d.setDate(d.getDate() + n);
+  return iso(d);
 }
-
-function fmtDuration(sec: number | null): string | null {
-  if (sec == null) return null;
-  const h = Math.floor(sec / 3600);
-  const m = Math.round((sec % 3600) / 60);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+function mondayOf(isoDate: string): string {
+  const d = new Date(`${isoDate}T00:00:00`);
+  const dow = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - dow);
+  return iso(d);
+}
+function firstSentence(text: string): string {
+  const m = text.match(/^.*?[.!?](\s|$)/);
+  const s = (m ? m[0] : text).trim();
+  return s.length > 180 ? `${s.slice(0, 177)}…` : s;
 }
 
 export default async function TodayPage() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const mo = String(now.getMonth() + 1).padStart(2, "0");
-  const monthFrom = `${y}-${mo}-01`;
-  const monthTo = `${y}-${mo}-${new Date(y, now.getMonth() + 1, 0).getDate()}`;
+  const todayIso = iso(new Date());
 
   let today: TodayResponse | null;
   let workouts: PlannedWorkout[] = [];
   let suggestions: AiWeekPlan | null = null;
-  let monthActivities: Activity[] = [];
-  let monthPlanned: PlannedWorkout[] = [];
-  let nextGoal: (TrainingGoal & { isPast: boolean }) | null = null;
+  let analytics: AnalyticsDay[] = [];
+  let goals: (TrainingGoal & { isPast: boolean })[] = [];
 
   try {
-    const [todayResult, upcomingResult, acts, evts, goals] = await Promise.all([
+    const [todayRes, upcoming, analyticsRes, goalsRes] = await Promise.all([
       fetchToday(),
       fetchUpcoming(),
-      fetchActivities(monthFrom, monthTo).catch(() => []),
-      fetchEvents(monthFrom, monthTo).catch(() => []),
+      fetchAnalytics(addDays(todayIso, -130), todayIso).catch(() => [] as AnalyticsDay[]),
       fetchGoals().catch(() => []),
     ]);
-    today = todayResult;
-    workouts = upcomingResult.workouts;
-    suggestions = upcomingResult.suggestions;
-    monthActivities = acts as typeof monthActivities;
-    monthPlanned = evts;
-    nextGoal = goals.find((g) => !g.isPast) ?? null;
+    today = todayRes;
+    workouts = upcoming.workouts;
+    suggestions = upcoming.suggestions;
+    analytics = analyticsRes;
+    goals = goalsRes;
   } catch {
-    return (
-      <EmptyState
-        title="Cannot reach the server"
-        message="The API is not responding."
-      />
-    );
+    return <LedgerEmpty title="No signal from the server" message="The training API isn't responding. Check the connection and try again." />;
   }
 
   if (!today) {
-    return (
-      <EmptyState
-        title="No summary yet"
-        message="Run the daily job to generate your first summary."
-      />
-    );
+    return <LedgerEmpty title="Awaiting the first entry" message="Run a sync to record your first day in the ledger." />;
   }
 
-  const { summary, wellness, trend } = today;
+  const { summary, wellness } = today;
 
-  return (
-    <main className="flex flex-col gap-8">
-      {/* Page header */}
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>Today</p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-white">
-            {longDate(summary.date)}
-          </h1>
-        </div>
-        <div className="mt-0.5">
-          <SyncButton />
-        </div>
-      </header>
+  // ---- Planned load (real workouts first, AI suggestions fill gaps) ----
+  const plannedByDate = new Map<string, number>();
+  for (const w of workouts) {
+    if (w.plannedLoad && w.plannedLoad > 0) plannedByDate.set(w.date, (plannedByDate.get(w.date) ?? 0) + w.plannedLoad);
+  }
+  if (suggestions) {
+    for (const d of suggestions.days) {
+      if (!plannedByDate.has(d.date) && d.plannedLoad > 0) plannedByDate.set(d.date, d.plannedLoad);
+    }
+  }
 
-      {/* Nearest goal banner */}
-      {nextGoal && <GoalBanner goal={nextGoal} />}
+  // ---- Fitness series (CTL/ATL/TSB), real load + projection ----
+  const loadByDate = new Map<string, number>();
+  for (const d of analytics) loadByDate.set(d.date, d.trainingLoadDaily ?? 0);
+  const history = densifyLoads(loadByDate, addDays(todayIso, -120), todayIso);
+  const fullFitness = buildFitnessSeries(history, plannedByDate, 21);
+  const fitness: FitnessPoint[] = fullFitness.slice(Math.max(0, fullFitness.length - (90 + 21)));
+  const todayPoint = [...fitness].reverse().find((p) => !p.projected) ?? fitness[fitness.length - 1];
+  const tsb = todayPoint?.tsb ?? 0;
 
-      {/* 7-day strip + expandable calendar */}
-      <ExpandableCalendar
-        initialActivities={monthActivities}
-        initialPlanned={monthPlanned}
-        year={y}
-        month={now.getMonth() + 1}
-      />
+  const acr = summary.acuteChronicRatio;
+  const readiness = computeReadiness(tsb, acr);
 
-      {/* Load + sparkline + wellness */}
-      <div className="grid gap-5 lg:grid-cols-[1fr_200px]">
-        <div className="flex flex-col gap-5">
-          {/* Load hero */}
-          <div className="glass-card rounded-2xl p-6">
-            <div className="flex items-end gap-5">
-              <div>
-                <p className="text-6xl font-bold tabular-nums tracking-tight leading-none text-white">
-                  {Math.round(summary.trainingLoadDaily)}
-                </p>
-                <p className="mt-2 text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>Training load today</p>
-              </div>
-              <div className="mb-1">
-                <AcrBadge ratio={summary.acuteChronicRatio} />
-              </div>
-            </div>
+  // ---- Header ----
+  const sumDate = new Date(`${summary.date}T00:00:00`);
+  const weekday = new Intl.DateTimeFormat("en-GB", { weekday: "long" }).format(sumDate);
+  const dateLong = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" }).format(sumDate);
 
-            <div className="mt-5">
-              <Sparkline values={trend.map((t) => t.trainingLoadDaily)} />
-              <div className="mt-1.5 flex justify-between text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-                <span>7d avg {Math.round(summary.load7d)}</span>
-                <span>28d avg {Math.round(summary.load28d)}</span>
-              </div>
-            </div>
-          </div>
+  const header = {
+    dateLong,
+    weekday,
+    readiness,
+    verdict: readinessVerdict(readiness),
+    strain: summary.trainingLoadDaily,
+    acr,
+    tsb,
+    coachLine: summary.aiSummaryText ? firstSentence(summary.aiSummaryText) : null,
+  };
 
-          {/* AI summary */}
-          {summary.aiSummaryText && (
-            <div className="glass-card rounded-2xl px-6 py-5">
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>Coach</p>
-              <p className="text-[15px] leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
-                {summary.aiSummaryText}
-              </p>
-            </div>
-          )}
-        </div>
+  // ---- Next session ----
+  const upcomingWorkout = workouts
+    .filter((w) => w.date >= todayIso)
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
+  const upcomingSuggestion = suggestions?.days
+    .filter((d) => d.date >= todayIso && d.plannedLoad > 0 && d.type !== "Rest")
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
 
-        {/* Wellness sidebar */}
-        {wellness && (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1 lg:content-start">
-            <WellnessCard
-              label="HRV"
-              value={wellness.hrv !== null ? `${Math.round(wellness.hrv)} ms` : null}
-              color="#5DCAA5"
-            />
-            <WellnessCard
-              label="Resting HR"
-              value={wellness.restingHr !== null ? `${wellness.restingHr} bpm` : null}
-              color="#F87171"
-            />
-            <WellnessCard
-              label="Sleep"
-              value={wellness.sleepSec !== null ? formatSleep(wellness.sleepSec) : null}
-              color="#C084FC"
-            />
-            <WellnessCard
-              label="Steps"
-              value={wellness.steps !== null ? wellness.steps.toLocaleString("en-GB") : null}
-              color="#FCD34D"
-            />
-            <WellnessCard
-              label="Weight"
-              value={wellness.weightKg !== null ? `${wellness.weightKg.toFixed(1)} kg` : null}
-              color="rgba(255,255,255,0.4)"
-            />
-          </div>
-        )}
-      </div>
+  const nextSession = upcomingWorkout
+    ? {
+        name: upcomingWorkout.name,
+        type: upcomingWorkout.type,
+        dateLong: longSession(upcomingWorkout.date),
+        tss: upcomingWorkout.plannedLoad,
+        durationSec: upcomingWorkout.plannedDurationSec,
+        description: upcomingWorkout.description,
+        rationale: null,
+        isSuggestion: false,
+      }
+    : upcomingSuggestion
+      ? {
+          name: upcomingSuggestion.name,
+          type: upcomingSuggestion.type,
+          dateLong: longSession(upcomingSuggestion.date),
+          tss: upcomingSuggestion.plannedLoad,
+          durationSec: upcomingSuggestion.plannedDurationSec,
+          description: upcomingSuggestion.description ?? null,
+          rationale: upcomingSuggestion.rationale,
+          isSuggestion: true,
+        }
+      : null;
 
-      {/* ACR projection chart */}
-      <AcrProjectionChart />
+  // ---- Vitals matrix (12 tiles) ----
+  const recent = analytics.slice(-28);
+  const fitTail = fitness.filter((p) => !p.projected).slice(-28);
+  const vitals: VitalTile[] = [
+    vitalTile("HRV", "ms", recent, (d) => d.hrv, true),
+    vitalTile("Resting HR", "bpm", recent, (d) => d.restingHr, false),
+    sleepTile(recent),
+    vitalTile("Steps", "", recent, (d) => d.steps, true, (v) => Math.round(v).toLocaleString("en-GB")),
+    vitalTile("Weight", "kg", recent, (d) => d.weightKg, null, (v) => v.toFixed(1)),
+    vitalTile("Training load", "", recent, (d) => d.trainingLoadDaily, null, (v) => Math.round(v).toString()),
+    seriesTile("Fitness", "ctl", fitTail.map((p) => p.ctl), true),
+    seriesTile("Fatigue", "atl", fitTail.map((p) => p.atl), null),
+    seriesTile("Form", "tsb", fitTail.map((p) => p.tsb), null, true),
+    seriesTile("Acute:chronic", "", fitTail.map((_, i) => recent[recent.length - fitTail.length + i]?.acuteChronicRatio ?? acr), null, false, (v) => v.toFixed(2)),
+    simTile("SpO₂", "%", 96, 98, 0),
+    simTile("Respiration", "brpm", 12, 15, 1),
+  ];
 
-      {/* Real planned workouts from intervals.icu */}
-      {workouts.length > 0 && (
-        <section>
-          <div className="mb-3 flex items-center gap-2.5">
-            <h2 className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
-              This week
-            </h2>
-          </div>
-          <div className="flex flex-col gap-2">
-            {workouts.map((w) => (
-              <PlannedWorkoutCard key={`${w.date}-${w.name}`} workout={w} />
-            ))}
-          </div>
-        </section>
-      )}
+  // ---- Week ahead ribbon ----
+  const ribbon: RibbonDay[] = Array.from({ length: 7 }, (_, i) => {
+    const date = addDays(todayIso, i);
+    const w = workouts.find((x) => x.date === date);
+    const sug = suggestions?.days.find((x) => x.date === date);
+    const name = w?.name ?? sug?.name ?? null;
+    const type = w?.type ?? sug?.type ?? null;
+    const load = w?.plannedLoad ?? sug?.plannedLoad ?? null;
+    const durationSec = w?.plannedDurationSec ?? sug?.plannedDurationSec ?? null;
+    const key: IntensityKey = name || load ? classifySession({ name, type, load, durationSec }) : "rest";
+    return {
+      dateIso: date,
+      dayName: shortDay(date),
+      dayNum: date.slice(8),
+      isToday: i === 0,
+      sessionName: key === "rest" ? null : name,
+      intensityKey: key,
+      durationSec,
+    };
+  });
 
-      {/* AI week suggestions */}
-      {suggestions && (
-        <section>
-          <div className="mb-3 flex items-center gap-2.5">
-            <h2 className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
-              {workouts.length > 0 ? "AI coach" : "AI suggested week"}
-            </h2>
-            <span
-              className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-              style={{ background: "rgba(192,132,252,0.15)", color: "#C084FC" }}
-            >
-              AI
-            </span>
-          </div>
-          <p className="mb-3 text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>{suggestions.overview}</p>
-          <div className="flex flex-col gap-2">
-            {suggestions.days.map((d) => (
-              <SuggestionCard key={d.date} day={d} />
-            ))}
-          </div>
-        </section>
-      )}
-    </main>
-  );
+  // ---- Macrocycle (weekly ramp: 8 past + current + 3 future) ----
+  const goal = goals.find((g) => !g.isPast) ?? null;
+  const macro: MacroWeek[] = buildMacro(loadByDate, plannedByDate, todayIso);
+  const goalInfo = goal ? goalContext(goal, todayIso) : null;
+
+  // ---- Device ticker ----
+  const ticker = [
+    "intervals.icu · connected",
+    `last entry · ${summary.date}`,
+    "coros · linked",
+    `ctl ${Math.round(todayPoint?.ctl ?? 0)} · atl ${Math.round(todayPoint?.atl ?? 0)} · tsb ${tsb >= 0 ? "+" : ""}${Math.round(tsb)}`,
+    `readiness ${readiness}/100`,
+    "hrv sensor · ok",
+    "gps · 3m accuracy",
+  ];
+
+  const data: LedgerData = {
+    header,
+    nextSession,
+    fitness,
+    vitals,
+    ribbon,
+    macro,
+    goal: goalInfo,
+    ticker,
+  };
+
+  return <LedgerDashboard data={data} />;
 }
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+// ---------- helpers ----------
 
-function PlannedWorkoutCard({ workout: w }: { workout: PlannedWorkout }) {
-  const dayName = DAY_NAMES[new Date(`${w.date}T00:00:00`).getDay()];
-  const duration = fmtDuration(w.plannedDurationSec);
+function longSession(isoDate: string): string {
+  return new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "long" }).format(new Date(`${isoDate}T00:00:00`));
+}
+
+function vitalTile(
+  label: string,
+  unit: string,
+  days: AnalyticsDay[],
+  pick: (d: AnalyticsDay) => number | null,
+  favorableUp: boolean | null,
+  fmt: (v: number) => string = (v) => Math.round(v).toString(),
+): VitalTile {
+  const series = days.map(pick).filter((v): v is number => v != null);
+  const latest = series.at(-1);
+  const prior = series.length > 7 ? series[series.length - 8] : series[0];
+  let delta: VitalTile["delta"] = null;
+  if (latest != null && prior != null && prior !== latest) {
+    const diff = latest - prior;
+    const up = diff > 0;
+    const favorable = favorableUp == null ? null : up === favorableUp;
+    delta = { text: `${up ? "▲" : "▼"} ${fmt(Math.abs(diff))} vs 7d`, favorable };
+  }
+  return { label, unit, value: latest != null ? fmt(latest) : "—", series, delta, sim: false };
+}
+
+function sleepTile(days: AnalyticsDay[]): VitalTile {
+  const series = days.map((d) => d.sleepSec).filter((v): v is number => v != null).map((s) => s / 3600);
+  const latest = series.at(-1);
+  const fmtH = (h: number) => {
+    const hh = Math.floor(h);
+    const mm = Math.round((h - hh) * 60);
+    return mm > 0 ? `${hh}h ${mm}m` : `${hh}h`;
+  };
+  const prior = series.length > 7 ? series[series.length - 8] : series[0];
+  let delta: VitalTile["delta"] = null;
+  if (latest != null && prior != null) {
+    const diff = latest - prior;
+    delta = { text: `${diff >= 0 ? "▲" : "▼"} ${Math.abs(diff).toFixed(1)}h vs 7d`, favorable: diff >= 0 };
+  }
+  return { label: "Sleep", unit: "", value: latest != null ? fmtH(latest) : "—", series, delta, sim: false };
+}
+
+function seriesTile(
+  label: string,
+  unit: string,
+  series: number[],
+  favorableUp: boolean | null,
+  signed = false,
+  fmt: (v: number) => string = (v) => Math.round(v).toString(),
+): VitalTile {
+  const latest = series.at(-1);
+  const prior = series.length > 7 ? series[series.length - 8] : series[0];
+  let delta: VitalTile["delta"] = null;
+  if (latest != null && prior != null && prior !== latest) {
+    const diff = latest - prior;
+    const up = diff > 0;
+    const favorable = favorableUp == null ? null : up === favorableUp;
+    delta = { text: `${up ? "▲" : "▼"} ${fmt(Math.abs(diff))} vs 7d`, favorable };
+  }
+  const value = latest != null ? `${signed && latest >= 0 ? "+" : ""}${fmt(latest)}` : "—";
+  return { label, unit, value, series, delta, sim: false };
+}
+
+function simTile(label: string, unit: string, lo: number, hi: number, decimals: number): VitalTile {
+  // Deterministic gentle wander so the SIM tiles look alive without RNG.
+  const series = Array.from({ length: 20 }, (_, i) => {
+    const t = i / 19;
+    const v = lo + (hi - lo) * (0.5 + 0.5 * Math.sin(t * Math.PI * 2 + label.length));
+    return Number(v.toFixed(decimals));
+  });
+  const latest = series.at(-1)!;
+  return {
+    label,
+    unit,
+    value: latest.toFixed(decimals),
+    series,
+    delta: { text: "estimated", favorable: null },
+    sim: true,
+  };
+}
+
+function buildMacro(loadByDate: Map<string, number>, plannedByDate: Map<string, number>, todayIso: string): MacroWeek[] {
+  const curMonday = mondayOf(todayIso);
+  const weeks: MacroWeek[] = [];
+  for (let offset = -8; offset <= 3; offset++) {
+    const start = addDays(curMonday, offset * 7);
+    let total = 0;
+    let peakDay = 0;
+    for (let d = 0; d < 7; d++) {
+      const day = addDays(start, d);
+      const v = day <= todayIso ? (loadByDate.get(day) ?? 0) : (plannedByDate.get(day) ?? 0);
+      total += v;
+      peakDay = Math.max(peakDay, v);
+    }
+    const isCurrent = offset === 0;
+    const isFuture = start > todayIso;
+    const key = total === 0 ? "rest" : classifySession({ load: peakDay });
+    const sd = new Date(`${start}T00:00:00`);
+    weeks.push({
+      label: `${sd.getDate()}/${sd.getMonth() + 1}`,
+      totalLoad: total,
+      intensityKey: key,
+      isFuture,
+      isCurrent,
+    });
+  }
+  return weeks;
+}
+
+function goalContext(goal: TrainingGoal & { isPast: boolean }, todayIso: string): { eventName: string; daysOut: number; phase: string } {
+  const days = Math.round((new Date(`${goal.targetDate}T00:00:00`).getTime() - new Date(`${todayIso}T00:00:00`).getTime()) / 86400000);
+  const weeks = days / 7;
+  const phase = weeks > 16 ? "Base" : weeks > 8 ? "Build" : weeks > 4 ? "Peak" : weeks > 2 ? "Taper" : days >= 0 ? "Race week" : "Past";
+  return { eventName: goal.eventName, daysOut: Math.max(0, days), phase };
+}
+
+function LedgerEmpty({ title, message }: { title: string; message: string }) {
   return (
-    <div className="glass-card rounded-2xl px-4 py-3.5">
-      <div className="flex items-start gap-4">
-        <div className="w-9 shrink-0 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.35)" }}>{dayName}</p>
-          <p className="text-sm font-bold text-white">{w.date.slice(8)}</p>
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-white">{w.name}</p>
-          <div className="mt-0.5 flex gap-3 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-            {w.type && <span>{w.type}</span>}
-            {duration && <span>{duration}</span>}
-            {w.plannedLoad != null && w.plannedLoad > 0 && (
-              <span className="font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>load {Math.round(w.plannedLoad)}</span>
-            )}
-          </div>
-          {w.description && (
-            <>
-              <p className="mt-1 text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.35)" }}>{w.description}</p>
-              <WorkoutBars description={w.description} />
-            </>
-          )}
-        </div>
-        {w.id != null && (
-          <DeleteWorkoutButton eventId={w.id} />
-        )}
-      </div>
+    <div className="ledger flex min-h-dvh flex-col items-center justify-center px-6 text-center">
+      <p className="lx-eyebrow" style={{ color: "var(--signal-ink)" }}>Training Ledger</p>
+      <h1 className="lx-serif mt-3" style={{ fontSize: "clamp(34px, 7vw, 56px)", fontWeight: 600, color: "var(--ink)" }}>{title}</h1>
+      <p className="lx-sans mt-3 max-w-sm text-[15px]" style={{ color: "var(--ink-2)" }}>{message}</p>
     </div>
-  );
-}
-
-function SuggestionCard({ day: d }: { day: AiDaySuggestion }) {
-  const dayName = DAY_NAMES[new Date(`${d.date}T00:00:00`).getDay()];
-  const duration = fmtDuration(d.plannedDurationSec);
-  const isRest = d.type === "Rest" || d.plannedLoad === 0;
-  return (
-    <div
-      className="flex items-start gap-4 rounded-2xl px-4 py-3.5"
-      style={{ border: "0.5px dashed rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.02)" }}
-    >
-      <div className="w-9 shrink-0 text-center">
-        <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.35)" }}>{dayName}</p>
-        <p className="text-sm font-bold text-white">{d.date.slice(8)}</p>
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className={`text-sm font-medium ${isRest ? "" : "text-white"}`} style={isRest ? { color: "rgba(255,255,255,0.35)" } : {}}>
-          {d.name}
-        </p>
-        <p className="mt-0.5 text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.35)" }}>{d.rationale}</p>
-        {!isRest && d.description && <WorkoutBars description={d.description} />}
-      </div>
-      {!isRest && (
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          <div className="flex gap-3 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-            {duration && <span>{duration}</span>}
-            {d.plannedLoad > 0 && (
-              <span className="font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>
-                load {Math.round(d.plannedLoad)}
-              </span>
-            )}
-          </div>
-          <AcceptButton day={d} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function WellnessCard({ label, value, color }: { label: string; value: string | null; color: string }) {
-  return (
-    <div className="glass-card rounded-2xl px-4 py-4">
-      <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>{label}</p>
-      <p
-        className="mt-1.5 text-lg font-bold tabular-nums"
-        style={{ color: value ? color : "rgba(255,255,255,0.15)" }}
-      >
-        {value ?? "—"}
-      </p>
-    </div>
-  );
-}
-
-function GoalBanner({ goal }: { goal: TrainingGoal & { isPast: boolean } }) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(`${goal.targetDate}T00:00:00`);
-  const days = Math.round((target.getTime() - today.getTime()) / 86400000);
-  const weeks = Math.round(days / 7);
-  const phase =
-    weeks > 16 ? "Base phase" :
-    weeks > 8 ? "Build phase" :
-    weeks > 4 ? "Peak phase" :
-    weeks > 2 ? "Taper" : "Race week";
-
-  return (
-    <div
-      className="flex items-center gap-4 rounded-2xl px-5 py-4"
-      style={{ background: "rgba(93,202,165,0.08)", border: "0.5px solid rgba(93,202,165,0.2)" }}
-    >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(93,202,165,0.12)" }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5DCAA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
-        </svg>
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-white">{goal.eventName}</p>
-        <p className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
-          {days > 0 ? `${days} days away · ${phase}` : days === 0 ? "Today!" : "Past"}
-        </p>
-      </div>
-      <p className="shrink-0 text-2xl font-bold tabular-nums" style={{ color: "#5DCAA5" }}>
-        {days > 0 ? days : "—"}
-      </p>
-    </div>
-  );
-}
-
-function EmptyState({ title, message }: { title: string; message: string }) {
-  return (
-    <main className="flex min-h-[60dvh] flex-col items-center justify-center gap-3 text-center">
-      <div
-        className="flex h-12 w-12 items-center justify-center rounded-2xl"
-        style={{ background: "rgba(255,255,255,0.06)" }}
-      >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-        </svg>
-      </div>
-      <h1 className="text-base font-semibold text-white">{title}</h1>
-      <p className="max-w-xs text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>{message}</p>
-    </main>
   );
 }

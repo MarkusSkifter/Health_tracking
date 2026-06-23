@@ -257,7 +257,7 @@ function DetailPanel({ detail, onClose }: { detail: DayDetail; onClose: () => vo
                         {w.plannedDurationSec != null && (
                           <span className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>{fmtDuration(w.plannedDurationSec)}</span>
                         )}
-                        {w.id != null && (
+                        {w.id != null && w.planId == null && (
                           <span className="ml-auto">
                             <DeleteWorkoutButton
                               eventId={w.id}
