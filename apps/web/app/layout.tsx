@@ -1,28 +1,47 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Inter } from "next/font/google";
+import { Cormorant_Garamond, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { BottomNav } from "./components/BottomNav";
-import { FluidBackground } from "./components/FluidBackground";
+import { Chrome } from "./components/Chrome";
 import { ServiceWorkerRegister } from "./components/ServiceWorkerRegister";
-import { TopNav } from "./components/TopNav";
 
-const inter = Inter({ subsets: ["latin"], display: "swap" });
+// Body — quiet, legible sans.
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-body",
+});
+
+// Headings — editorial serif, set large and tight.
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-head",
+});
+
+// Telemetry numerals — instrument-grade mono.
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
-  title: "Training Insights",
-  description: "Your daily training load, recovery, and trends.",
+  title: "Training Ledger",
+  description: "Strain, readiness, and the shape of your fitness — a daily training ledger.",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icon.svg" },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Training Insights",
+    title: "Training Ledger",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#060608",
+  themeColor: "#f9f7f2",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -30,16 +49,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={inter.className}>
+    <html lang="en" className={`${inter.variable} ${cormorant.variable} ${jetbrains.variable}`}>
       <body>
-        <FluidBackground />
-        <TopNav />
-        <div className="relative z-10">
-          <div className="mx-auto max-w-4xl px-5 pt-20 pb-28 md:px-10 md:pt-20 md:pb-12">
-            {children}
-          </div>
-        </div>
-        <BottomNav />
+        <Chrome>{children}</Chrome>
         <ServiceWorkerRegister />
       </body>
     </html>

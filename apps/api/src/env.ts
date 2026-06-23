@@ -40,6 +40,11 @@ const vapidSchema = z.object({
   VAPID_SUBJECT: z.string().min(1),
 });
 
+const corosSchema = z.object({
+  COROS_CLIENT_ID: z.string().min(1),
+  COROS_CLIENT_SECRET: z.string().min(1),
+});
+
 function memoize<T>(fn: () => T): () => T {
   let cached: T | undefined;
   let loaded = false;
@@ -62,6 +67,8 @@ export const anthropicEnv = memoize(() => anthropicSchema.parse(process.env));
 export const serverEnv = memoize(() => serverSchema.parse(process.env));
 /** VAPID keys for Web Push. */
 export const vapidEnv = memoize(() => vapidSchema.parse(process.env));
+/** COROS API credentials. */
+export const corosEnv = memoize(() => corosSchema.parse(process.env));
 
 export type IntervalsEnv = z.infer<typeof intervalsSchema>;
 export type DatabaseEnv = z.infer<typeof databaseSchema>;
