@@ -6,13 +6,30 @@ import { pushSubscriptions } from "../db/schema";
 import { getOrCreateUserId } from "../ingest/store";
 import { vapidEnv } from "../env";
 
-const { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT } = vapidEnv();
-webPush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
-
 interface PushKeys { p256dh: string; auth: string }
 interface Subscription { endpoint: string; keys: PushKeys }
 
+let vapidPublicKey: string | null = null;
+
+function initVapid(): boolean {
+  try {
+    const { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT } = vapidEnv();
+    const subject = VAPID_SUBJECT.includes("@") && !VAPID_SUBJECT.startsWith("mailto:")
+      ? `mailto:${VAPID_SUBJECT}`
+      : VAPID_SUBJECT;
+    webPush.setVapidDetails(subject, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+    vapidPublicKey = VAPID_PUBLIC_KEY;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function registerPushRoutes(app: FastifyInstance): Promise<void> {
+  if (!initVapid()) {
+    app.log.warn("VAPID env vars missing or invalid — push notification routes disabled");
+    return;
+  }
   // POST /api/push/subscribe — save a push subscription
   app.post<{ Body: { subscription: Subscription } }>("/api/push/subscribe", async (req, reply) => {
     const { subscription } = req.body ?? {};
@@ -44,11 +61,12 @@ export async function registerPushRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // GET /api/push/vapid-public-key — expose the public key to the client
-  app.get("/api/push/vapid-public-key", async () => ({ publicKey: VAPID_PUBLIC_KEY }));
+  app.get("/api/push/vapid-public-key", async () => ({ publicKey: vapidPublicKey }));
 }
 
 /** Send a push notification to all subscriptions for the default user. */
 export async function sendDailyPush(date: string, text: string): Promise<void> {
+  if (!initVapid()) return; // no-op if VAPID not configured
   const userId = await getOrCreateUserId();
   const subs = await db
     .select()
