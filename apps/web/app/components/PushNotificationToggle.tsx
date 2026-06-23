@@ -6,11 +6,13 @@ import { useEffect, useState } from "react";
 const VAPID_PUBLIC_KEY =
   "BC6-5bpCeNK9FYmHisrNldyWzbBYl6D4i4cTQuwNNNQSCzyMCIQ7dMr3fcu5AcqPVTbaP79uEOnF5wZqToMoTEQ";
 
-function urlBase64ToUint8Array(base64: string): Uint8Array {
+function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
   const b64 = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
   const raw = atob(b64);
-  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; ++i) arr[i] = raw.charCodeAt(i);
+  return arr;
 }
 
 type Status = "unsupported" | "denied" | "subscribed" | "unsubscribed" | "loading";
