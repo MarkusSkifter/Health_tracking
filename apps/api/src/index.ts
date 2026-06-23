@@ -1,5 +1,7 @@
+import { bootstrap } from "./db/bootstrap";
 import { buildApp } from "./app";
 
+await bootstrap();
 const app = await buildApp();
 const port = Number(process.env.PORT ?? 3001);
 
