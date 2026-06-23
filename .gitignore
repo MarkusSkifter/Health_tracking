@@ -13,9 +13,6 @@ out/
 .next/
 *.tsbuildinfo
 
-# generated service worker (Serwist)
-apps/web/public/sw.js
-apps/web/public/sw.js.map
 
 # logs
 *.log

@@ -1,0 +1,64 @@
+// Minimal offline service worker (stale-while-revalidate for same-origin GETs).
+const CACHE = "training-insights-v1";
+
+self.addEventListener("install", () => {
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+      await self.clients.claim();
+    })(),
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  if (request.method !== "GET") return;
+  if (new URL(request.url).origin !== self.location.origin) return;
+
+  event.respondWith(
+    (async () => {
+      const cache = await caches.open(CACHE);
+      const cached = await cache.match(request);
+      const network = fetch(request)
+        .then((res) => {
+          if (res.ok) cache.put(request, res.clone());
+          return res;
+        })
+        .catch(() => cached);
+      return cached ?? network;
+    })(),
+  );
+});
+
+// Show an incoming push notification.
+self.addEventListener("push", (event) => {
+  const data = event.data?.json() ?? {};
+  const title = data.title ?? "Training Insights";
+  const options = {
+    body: data.body ?? "",
+    icon: "/icon.svg",
+    badge: "/icon.svg",
+    tag: data.tag ?? "daily-coaching",
+    data: { url: data.url ?? "/" },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Open / focus the app when the user taps the notification.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url ?? "/";
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      for (const client of list) {
+        if (client.url.endsWith(url) && "focus" in client) return client.focus();
+      }
+      return clients.openWindow(url);
+    }),
+  );
+});

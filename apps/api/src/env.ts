@@ -34,6 +34,12 @@ const serverSchema = z.object({
   PORT: z.coerce.number().default(3001),
 });
 
+const vapidSchema = z.object({
+  VAPID_PUBLIC_KEY: z.string().min(1),
+  VAPID_PRIVATE_KEY: z.string().min(1),
+  VAPID_SUBJECT: z.string().min(1),
+});
+
 function memoize<T>(fn: () => T): () => T {
   let cached: T | undefined;
   let loaded = false;
@@ -54,6 +60,8 @@ export const databaseEnv = memoize(() => databaseSchema.parse(process.env));
 export const anthropicEnv = memoize(() => anthropicSchema.parse(process.env));
 /** API server settings. */
 export const serverEnv = memoize(() => serverSchema.parse(process.env));
+/** VAPID keys for Web Push. */
+export const vapidEnv = memoize(() => vapidSchema.parse(process.env));
 
 export type IntervalsEnv = z.infer<typeof intervalsSchema>;
 export type DatabaseEnv = z.infer<typeof databaseSchema>;

@@ -24,5 +24,21 @@ await sql`
   ON "user_settings"("user_id")
 `;
 
+await sql`
+  CREATE TABLE IF NOT EXISTS "push_subscriptions" (
+    "id"         integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    "user_id"    integer NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+    "endpoint"   text NOT NULL,
+    "p256dh"     text NOT NULL,
+    "auth"       text NOT NULL,
+    "created_at" timestamptz NOT NULL DEFAULT now()
+  )
+`;
+
+await sql`
+  CREATE UNIQUE INDEX IF NOT EXISTS "push_subscriptions_user_id_endpoint_idx"
+  ON "push_subscriptions"("user_id", "endpoint")
+`;
+
 await sql.end();
-console.log("Bootstrap complete — user_settings ready");
+console.log("Bootstrap complete — user_settings + push_subscriptions ready");

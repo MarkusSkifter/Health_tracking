@@ -25,8 +25,8 @@ body {
 
 /* Glass card — base bg + border used across all card surfaces */
 .glass-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 0.5px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.07);
+  border: 0.5px solid rgba(255, 255, 255, 0.10);
 }
 
 /* Smooth calendar expand — grid-template-rows trick */

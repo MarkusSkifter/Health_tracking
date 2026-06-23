@@ -160,16 +160,20 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
     try {
       const userId = await getOrCreateUserId();
       const { ftpWatts, runThresholdSec } = req.body;
-      await db.insert(userSettings)
-        .values({ userId, ftpWatts: ftpWatts ?? null, runThresholdSec: runThresholdSec ?? null, updatedAt: new Date() })
-        .onConflictDoUpdate({
-          target: userSettings.userId,
-          set: { ftpWatts: ftpWatts ?? null, runThresholdSec: runThresholdSec ?? null, updatedAt: new Date() },
-        });
+      const existing = await db.select({ id: userSettings.id }).from(userSettings).where(eq(userSettings.userId, userId)).limit(1);
+      if (existing[0]) {
+        await db.update(userSettings)
+          .set({ ftpWatts: ftpWatts ?? null, runThresholdSec: runThresholdSec ?? null, updatedAt: new Date() })
+          .where(eq(userSettings.userId, userId));
+      } else {
+        await db.insert(userSettings)
+          .values({ userId, ftpWatts: ftpWatts ?? null, runThresholdSec: runThresholdSec ?? null });
+      }
       return { ok: true };
     } catch (err) {
       app.log.error(err, "Failed to save settings");
-      return reply.code(500).send({ error: "Failed to save settings" });
+      const msg = err instanceof Error ? err.message : String(err);
+      return reply.code(500).send({ error: `Failed to save settings: ${msg}` });
     }
   });
 
