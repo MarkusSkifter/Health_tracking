@@ -1,5 +1,10 @@
-// Minimal offline service worker (stale-while-revalidate for same-origin GETs).
-const CACHE = "training-insights-v1";
+// Offline service worker.
+//   - Page navigations (HTML): NETWORK-FIRST, so a new build/deploy always
+//     shows immediately; cache is only a fallback when offline.
+//   - Static assets (hashed /_next/static, icons): stale-while-revalidate,
+//     which is safe because their filenames change per build.
+// Bump CACHE whenever the strategy changes to evict old entries.
+const CACHE = "training-ledger-v2";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -20,6 +25,32 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   if (new URL(request.url).origin !== self.location.origin) return;
 
+  const isNavigation =
+    request.mode === "navigate" ||
+    (request.headers.get("accept") || "").includes("text/html");
+
+  if (isNavigation) {
+    // Always try the network first so fresh HTML (and thus fresh asset refs)
+    // win. Fall back to cache only when the network is unavailable.
+    event.respondWith(
+      (async () => {
+        try {
+          const res = await fetch(request);
+          if (res.ok) {
+            const cache = await caches.open(CACHE);
+            cache.put(request, res.clone());
+          }
+          return res;
+        } catch {
+          const cached = await caches.match(request);
+          return cached ?? Response.error();
+        }
+      })(),
+    );
+    return;
+  }
+
+  // Static assets: serve cached for speed, refresh in the background.
   event.respondWith(
     (async () => {
       const cache = await caches.open(CACHE);
@@ -38,7 +69,7 @@ self.addEventListener("fetch", (event) => {
 // Show an incoming push notification.
 self.addEventListener("push", (event) => {
   const data = event.data?.json() ?? {};
-  const title = data.title ?? "Training Insights";
+  const title = data.title ?? "Training Ledger";
   const options = {
     body: data.body ?? "",
     icon: "/icon.svg",
