@@ -6,13 +6,14 @@ import { BottomNav } from "./BottomNav";
 import { FluidBackground } from "./FluidBackground";
 import { TopNav } from "./TopNav";
 
-/* The Today route (`/`) is the full-bleed Editorial Ledger and supplies its
-   own masthead + footer ticker. Every other route keeps the dark instrument
-   chrome until it's reskinned. */
+/* The ledger routes are full-bleed and supply their own masthead + ticker.
+   Every other route keeps the dark instrument chrome until it's reskinned. */
+const LEDGER_ROUTES = ["/", "/calendar", "/analytics"];
+
 export function Chrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
-  if (pathname === "/") {
+  if (LEDGER_ROUTES.includes(pathname)) {
     return <>{children}</>;
   }
 

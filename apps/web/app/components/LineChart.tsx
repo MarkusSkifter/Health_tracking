@@ -17,7 +17,7 @@ interface LineChartProps {
 
 export function LineChart({
   data,
-  color = "#5DCAA5",
+  color = "var(--ink-2)",
   height = 80,
   format,
   unit = "",
@@ -28,13 +28,8 @@ export function LineChart({
 
   if (data.length === 0 || validData.length < 2) {
     return (
-      <div
-        className="flex items-center justify-center"
-        style={{ height }}
-        role="img"
-        aria-label="No data available"
-      >
-        <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>No data</p>
+      <div className="flex items-center justify-center" style={{ height }} role="img" aria-label="No data available">
+        <p className="lx-mono text-xs" style={{ color: "var(--ink-4)" }}>No data</p>
       </div>
     );
   }
@@ -82,102 +77,40 @@ export function LineChart({
 
   return (
     <div className="select-none" onMouseLeave={() => setHovered(null)}>
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        className="w-full"
-        style={{ height }}
-        role="img"
-        aria-label="Metric trend chart"
-      >
-        {/* Subtle grid */}
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height }} role="img" aria-label="Metric trend chart">
         {[0, 0.5, 1].map((t) => (
-          <line
-            key={t}
-            x1={px}
-            x2={px + cw}
-            y1={py + ch * (1 - t)}
-            y2={py + ch * (1 - t)}
-            stroke="rgba(255,255,255,0.05)"
-            strokeWidth="1"
-          />
+          <line key={t} x1={px} x2={px + cw} y1={py + ch * (1 - t)} y2={py + ch * (1 - t)} stroke="var(--line)" strokeWidth="1" />
         ))}
 
-        {/* Data line */}
-        {pathD && (
-          <path
-            d={pathD}
-            fill="none"
-            stroke={color}
-            strokeWidth="1.5"
-            strokeOpacity="0.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        )}
+        {pathD && <path d={pathD} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />}
 
-        {/* Hover crosshair */}
         {hoveredPt && hoveredPt.y !== null && (
           <>
-            <line
-              x1={hoveredPt.x.toFixed(1)}
-              x2={hoveredPt.x.toFixed(1)}
-              y1={py}
-              y2={py + ch}
-              stroke="rgba(255,255,255,0.12)"
-              strokeWidth="1"
-            />
-            <circle
-              cx={hoveredPt.x.toFixed(1)}
-              cy={hoveredPt.y.toFixed(1)}
-              r="3"
-              fill={color}
-            />
+            <line x1={hoveredPt.x.toFixed(1)} x2={hoveredPt.x.toFixed(1)} y1={py} y2={py + ch} stroke="var(--line-2)" strokeWidth="1" />
+            <circle cx={hoveredPt.x.toFixed(1)} cy={hoveredPt.y.toFixed(1)} r="3" fill={color} />
           </>
         )}
 
-        {/* Resting dot at latest point */}
         {hovered === null && latestValid && latestValid.y !== null && (
-          <circle
-            cx={latestValid.x.toFixed(1)}
-            cy={(latestValid.y as number).toFixed(1)}
-            r="2.5"
-            fill={color}
-          />
+          <circle cx={latestValid.x.toFixed(1)} cy={(latestValid.y as number).toFixed(1)} r="2.5" fill={color} />
         )}
 
-        {/* Invisible hover strips */}
         {positions.map((p, i) => {
           const leftX = i > 0 ? (positions[i - 1]!.x + p.x) / 2 : px;
-          const rightX =
-            i < positions.length - 1 ? (p.x + positions[i + 1]!.x) / 2 : px + cw;
-          return (
-            <rect
-              key={i}
-              x={leftX}
-              y={py}
-              width={Math.max(rightX - leftX, 1)}
-              height={ch}
-              fill="transparent"
-              onMouseEnter={() => setHovered(i)}
-            />
-          );
+          const rightX = i < positions.length - 1 ? (p.x + positions[i + 1]!.x) / 2 : px + cw;
+          return <rect key={i} x={leftX} y={py} width={Math.max(rightX - leftX, 1)} height={ch} fill="transparent" onMouseEnter={() => setHovered(i)} />;
         })}
       </svg>
 
-      {/* Axis / tooltip row */}
-      <div className="mt-1 flex justify-between text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+      <div className="lx-mono mt-1.5 flex justify-between text-[10px]" style={{ color: "var(--ink-3)" }}>
         <span>{mmdd(data[0]!.date)}</span>
         {hoveredPt ? (
-          <span className="font-medium" style={{ color: "rgba(255,255,255,0.7)" }}>
+          <span style={{ color: "var(--ink)", fontWeight: 600 }}>
             {mmdd(hoveredPt.date)}
-            {hoveredPt.value !== null
-              ? ` · ${fmt(hoveredPt.value)}${unit}`
-              : " · —"}
+            {hoveredPt.value !== null ? ` · ${fmt(hoveredPt.value)}${unit}` : " · —"}
           </span>
         ) : (
-          <span>
-            {validData.length > 0 ? `${fmt(min)} – ${fmt(max)}${unit}` : ""}
-          </span>
+          <span>{validData.length > 0 ? `${fmt(min)} – ${fmt(max)}${unit}` : ""}</span>
         )}
         <span>{mmdd(data[data.length - 1]!.date)}</span>
       </div>
