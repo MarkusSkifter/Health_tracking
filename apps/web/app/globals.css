@@ -6,7 +6,7 @@
    ============================================================ */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
   --ink-d: #060608;
   --ink-d-2: #0a0b0e;
@@ -34,8 +34,8 @@
 }
 
 body {
-  background-color: var(--ink-d);
-  color: var(--fg);
+  background-color: #f9f7f2;
+  color: #1a1816;
   font-family: var(--type-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

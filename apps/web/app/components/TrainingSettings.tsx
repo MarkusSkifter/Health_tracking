@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ledgerInput, ledgerPrimaryBtn } from "./ledger/forms";
 
 function secToPace(sec: number | null): string {
   if (!sec) return "";
@@ -13,17 +14,7 @@ function paceToSec(pace: string): number | null {
   return parseInt(m[1]!) * 60 + parseInt(m[2]!);
 }
 
-const inputStyle: React.CSSProperties = {
-  width: 144,
-  background: "rgba(255,255,255,0.06)",
-  border: "0.5px solid rgba(255,255,255,0.12)",
-  borderRadius: 8,
-  padding: "8px 12px",
-  fontSize: 14,
-  color: "#fff",
-  outline: "none",
-  transition: "border-color 0.15s",
-};
+const inputStyle: React.CSSProperties = { ...ledgerInput, width: 160 };
 
 export function TrainingSettings() {
   const [ftp, setFtp] = useState("");
@@ -76,57 +67,34 @@ export function TrainingSettings() {
   }
 
   if (loading) {
-    return <p className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>Loading…</p>;
+    return <p className="lx-sans text-sm" style={{ color: "var(--ink-3)" }}>Loading…</p>;
   }
 
   return (
-    <form onSubmit={save} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>
-          Cycling FTP (watts)
-        </label>
-        <input
-          type="number"
-          min={50}
-          max={600}
-          value={ftp}
-          onChange={(e) => setFtp(e.target.value)}
-          placeholder="e.g. 280"
-          style={inputStyle}
-        />
-        <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>
-          Used to calculate zone targets for ride suggestions (Z1=50-60%, Z4=91-105%…)
+    <form onSubmit={save} className="flex flex-col gap-5">
+      <div className="flex flex-col gap-2">
+        <label className="lx-eyebrow">Cycling FTP (watts)</label>
+        <input type="number" min={50} max={600} value={ftp} onChange={(e) => setFtp(e.target.value)} placeholder="e.g. 280" style={inputStyle} />
+        <p className="lx-sans text-xs" style={{ color: "var(--ink-3)" }}>
+          Used to calculate zone targets for ride suggestions (Z1 = 50–60%, Z4 = 91–105%…).
         </p>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>
-          Run threshold pace (MM:SS per km)
-        </label>
-        <input
-          type="text"
-          value={pace}
-          onChange={(e) => setPace(e.target.value)}
-          placeholder="e.g. 4:30"
-          style={inputStyle}
-        />
-        <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>
+      <div className="flex flex-col gap-2">
+        <label className="lx-eyebrow">Run threshold pace (MM:SS per km)</label>
+        <input type="text" value={pace} onChange={(e) => setPace(e.target.value)} placeholder="e.g. 4:30" style={inputStyle} />
+        <p className="lx-sans text-xs" style={{ color: "var(--ink-3)" }}>
           Your lactate threshold pace. Used to calibrate run interval targets.
         </p>
       </div>
 
-      {error && <p className="text-xs" style={{ color: "#F87171" }}>{error}</p>}
+      {error && <p className="lx-mono text-xs" style={{ color: "var(--signal)" }}>{error}</p>}
 
       <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={saving}
-          className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50"
-          style={{ background: "linear-gradient(135deg, #1D9E75, #2A7FC0)" }}
-        >
+        <button type="submit" disabled={saving} className="transition-opacity disabled:opacity-50" style={ledgerPrimaryBtn}>
           {saving ? "Saving…" : "Save"}
         </button>
-        {saved && <span className="text-xs font-medium" style={{ color: "#5DCAA5" }}>Saved</span>}
+        {saved && <span className="lx-eyebrow" style={{ color: "var(--signal-ink)" }}>Saved</span>}
       </div>
     </form>
   );

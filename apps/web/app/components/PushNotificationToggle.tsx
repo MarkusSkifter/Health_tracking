@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ledgerGhostBtn, ledgerPrimaryBtn } from "./ledger/forms";
 
 // Public VAPID key — safe to embed in client code.
 const VAPID_PUBLIC_KEY =
@@ -87,28 +88,20 @@ export function PushNotificationToggle() {
   if (status === "loading") return null;
 
   if (status === "unsupported") {
-    return (
-      <p className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
-        Push notifications are not supported in this browser.
-      </p>
-    );
+    return <p className="lx-sans text-sm" style={{ color: "var(--ink-3)" }}>Push notifications are not supported in this browser.</p>;
   }
 
   if (status === "denied") {
-    return (
-      <p className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
-        Notifications are blocked. Go to Settings → Safari → Training Insights to allow them.
-      </p>
-    );
+    return <p className="lx-sans text-sm" style={{ color: "var(--ink-3)" }}>Notifications are blocked. Go to Settings → Safari → Training Ledger to allow them.</p>;
   }
 
   return (
     <div className="flex items-center justify-between gap-4">
       <div>
-        <p className="text-sm font-medium text-white">
+        <p className="lx-sans text-sm font-medium" style={{ color: "var(--ink)" }}>
           {status === "subscribed" ? "Notifications on" : "Notifications off"}
         </p>
-        <p className="mt-0.5 text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <p className="lx-sans mt-0.5 text-xs" style={{ color: "var(--ink-3)" }}>
           {status === "subscribed"
             ? "Daily coaching message arrives around 05:00 Copenhagen time."
             : "Get your daily coaching message as a notification at 05:00."}
@@ -117,12 +110,8 @@ export function PushNotificationToggle() {
       <button
         onClick={status === "subscribed" ? unsubscribe : subscribe}
         disabled={working}
-        className="shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition-opacity disabled:opacity-40"
-        style={
-          status === "subscribed"
-            ? { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" }
-            : { background: "linear-gradient(135deg, #1D9E75, #2A7FC0)", color: "#fff" }
-        }
+        className="shrink-0 transition-opacity disabled:opacity-40"
+        style={status === "subscribed" ? ledgerGhostBtn : ledgerPrimaryBtn}
       >
         {working ? "…" : status === "subscribed" ? "Turn off" : "Turn on"}
       </button>

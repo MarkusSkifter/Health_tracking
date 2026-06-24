@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Cormorant_Garamond, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { Chrome } from "./components/Chrome";
 import { ServiceWorkerRegister } from "./components/ServiceWorkerRegister";
 
 // Body — quiet, legible sans.
@@ -51,7 +50,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${cormorant.variable} ${jetbrains.variable}`}>
       <body>
-        <Chrome>{children}</Chrome>
+        {children}
         <ServiceWorkerRegister />
       </body>
     </html>
