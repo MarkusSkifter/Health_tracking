@@ -45,8 +45,17 @@ export async function storeActivities(
   userId: number,
   rawActivities: unknown[],
 ): Promise<number> {
+  let stored = 0;
   for (const item of rawActivities) {
     const parsed = intervalsActivitySchema.parse(item);
+
+    // intervals.icu returns calendar notes/placeholders on the activities feed:
+    // no sport type and no recorded effort. Skip them so they don't show up as
+    // "Unknown" workouts.
+    if (parsed.type == null && parsed.moving_time == null && parsed.distance == null) {
+      continue;
+    }
+
     const json = item as Record<string, unknown>;
 
     await db
@@ -73,8 +82,9 @@ export async function storeActivities(
           trainingLoad: norm.trainingLoad,
         },
       });
+    stored++;
   }
-  return rawActivities.length;
+  return stored;
 }
 
 /** Upsert wellness records into both the raw and normalized tables. */

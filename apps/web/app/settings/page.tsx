@@ -52,9 +52,20 @@ export default function SettingsPage() {
           <PushNotificationToggle />
         </Row>
 
-        <Row title="Data source" desc="v1 runs for a single intervals.icu account configured on the server. Per-account OAuth is planned for v2." />
-
-        <Row title="Connect intervals.icu" desc="Per-account OAuth connection is planned for v2." />
+        <Row
+          title="Connections"
+          desc={
+            <>
+              v1 runs on a single intervals.icu account configured on the server. Per-account OAuth — connect your own intervals.icu — is planned for v2.
+            </>
+          }
+        >
+          <div className="lx-leaf flex items-center gap-3 px-4 py-3.5">
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--tsb-pos)", flex: "none" }} />
+            <span className="lx-sans text-sm" style={{ color: "var(--ink)" }}>intervals.icu</span>
+            <span className="lx-eyebrow ml-auto" style={{ color: "var(--ink-3)" }}>Connected</span>
+          </div>
+        </Row>
       </div>
 
       <p className="lx-mono mt-10 text-center text-[11px]" style={{ color: "var(--ink-4)" }}>Training Ledger · v1</p>
