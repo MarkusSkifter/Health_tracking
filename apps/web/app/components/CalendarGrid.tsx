@@ -3,30 +3,8 @@
 import type { Activity, PlannedWorkout } from "@health/shared";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { DeleteWorkoutButton } from "./DeleteWorkoutButton";
-import { WorkoutBars, parseWorkout, LOAD_PER_MIN } from "./WorkoutBars";
-
-const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-  Ride:          { bg: "rgba(251,191,36,0.18)",  text: "#FCD34D" },
-  VirtualRide:   { bg: "rgba(251,191,36,0.18)",  text: "#FCD34D" },
-  Run:           { bg: "rgba(29,158,117,0.18)",   text: "#5DCAA5" },
-  VirtualRun:    { bg: "rgba(29,158,117,0.18)",   text: "#5DCAA5" },
-  Swim:          { bg: "rgba(55,138,221,0.18)",   text: "#6BAEE8" },
-  Walk:          { bg: "rgba(93,202,165,0.18)",   text: "#5DCAA5" },
-  WeightTraining:{ bg: "rgba(192,132,252,0.18)",  text: "#C084FC" },
-  Workout:       { bg: "rgba(255,255,255,0.08)",  text: "rgba(255,255,255,0.5)" },
-};
-
-function typeColor(type: string | null) {
-  return TYPE_COLORS[type ?? ""] ?? { bg: "rgba(255,255,255,0.08)", text: "rgba(255,255,255,0.5)" };
-}
-
-function fmtDuration(sec: number | null): string {
-  if (!sec) return "";
-  const h = Math.floor(sec / 3600);
-  const m = Math.round((sec % 3600) / 60);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
-}
+import { classifySession, fmtDuration, intensity, type IntensityKey } from "./ledger/shared";
+import { LOAD_PER_MIN, parseWorkout } from "./WorkoutBars";
 
 function shortType(type: string | null): string {
   if (!type) return "Workout";
@@ -36,6 +14,18 @@ function shortType(type: string | null): string {
   return type;
 }
 
+function activityIntensity(a: Activity): IntensityKey {
+  return classifySession({ name: a.type, type: a.type, load: a.trainingLoad, durationSec: a.durationSec });
+}
+function plannedIntensity(w: PlannedWorkout): IntensityKey {
+  return classifySession({ name: w.name, type: w.type, load: w.plannedLoad, durationSec: w.plannedDurationSec });
+}
+
+function fmtDist(meters: number | null): string {
+  if (meters == null) return "";
+  return `${(meters / 1000).toFixed(1)} km`;
+}
+
 interface DayDetail {
   date: string;
   activities: Activity[];
@@ -43,6 +33,18 @@ interface DayDetail {
 }
 
 const WORKOUT_TYPES = ["Run", "Ride", "Swim", "Walk", "WeightTraining", "Workout"] as const;
+
+const inputStyle: React.CSSProperties = {
+  background: "var(--paper-3)",
+  border: "1px solid var(--line-2)",
+  borderRadius: "var(--radius)",
+  padding: "9px 12px",
+  fontSize: 14,
+  color: "var(--ink)",
+  width: "100%",
+  outline: "none",
+  fontFamily: "var(--font-body)",
+};
 
 function AddWorkoutForm({ date, onCancel, onSaved }: { date: string; onCancel: () => void; onSaved: () => void }) {
   const [name, setName] = useState("");
@@ -74,7 +76,7 @@ function AddWorkoutForm({ date, onCancel, onSaved }: { date: string; onCancel: (
         }),
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as { error?: string };
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(body.error ?? `Error ${res.status}`);
       }
       onSaved();
@@ -84,79 +86,47 @@ function AddWorkoutForm({ date, onCancel, onSaved }: { date: string; onCancel: (
     }
   }
 
-  const inputStyle: React.CSSProperties = {
-    background: "rgba(255,255,255,0.06)",
-    border: "0.5px solid rgba(255,255,255,0.12)",
-    borderRadius: 12,
-    padding: "8px 12px",
-    fontSize: 14,
-    color: "#fff",
-    width: "100%",
-    outline: "none",
-    transition: "border-color 0.15s",
-  };
-
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
       <div className="flex gap-2">
-        <input
-          style={{ ...inputStyle, flex: 1 }}
-          placeholder="Workout name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          autoFocus
-        />
-        <select
-          style={{ ...inputStyle, width: "auto", flexShrink: 0 }}
-          value={type}
-          onChange={(e) => setType(e.target.value)}
-        >
+        <input style={{ ...inputStyle, flex: 1 }} placeholder="Session name" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
+        <select style={{ ...inputStyle, width: "auto", flexShrink: 0 }} value={type} onChange={(e) => setType(e.target.value)}>
           {WORKOUT_TYPES.map((t) => (
-            <option key={t} value={t} style={{ background: "#0f0f12" }}>{t === "WeightTraining" ? "Weights" : t}</option>
+            <option key={t} value={t}>{t === "WeightTraining" ? "Weights" : t}</option>
           ))}
         </select>
       </div>
 
       <textarea
-        style={{ ...inputStyle, minHeight: 96, resize: "vertical", fontFamily: "monospace", fontSize: 12, lineHeight: 1.6 }}
+        style={{ ...inputStyle, minHeight: 92, resize: "vertical", fontFamily: "var(--type-mono)", fontSize: 12, lineHeight: 1.6 }}
         placeholder={"e.g. 15min Z1\n3x(8min @ threshold, 3min easy)\n10min cooldown"}
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
 
       {blocks.length > 0 && (
-        <div className="rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.04)", border: "0.5px solid rgba(255,255,255,0.08)" }}>
-          <WorkoutBars description={description} />
-          <div className="mt-2 flex gap-3">
-            <span className="text-xs font-semibold tabular-nums" style={{ color: "rgba(255,255,255,0.55)" }}>
-              {totalMin} min
-            </span>
-            <span className="text-xs tabular-nums" style={{ color: "rgba(255,255,255,0.3)" }}>
-              ~{estimatedLoad} load
-            </span>
-          </div>
+        <div className="flex gap-4 px-1">
+          <span className="lx-num text-[12px]" style={{ color: "var(--ink-2)" }}>{totalMin} min</span>
+          <span className="lx-num text-[12px]" style={{ color: "var(--ink-3)" }}>~{estimatedLoad} load</span>
         </div>
       )}
 
-      {error && <p className="text-xs" style={{ color: "#F87171" }}>{error}</p>}
+      {error && <p className="lx-mono text-xs" style={{ color: "var(--signal)" }}>{error}</p>}
 
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={saving || !name.trim()}
-          className="flex-1 rounded-xl py-2 text-sm font-semibold text-white transition-colors disabled:opacity-40"
-          style={{ background: "linear-gradient(135deg, #1D9E75, #2A7FC0)" }}
+          className="lx-eyebrow flex-1 py-2.5 transition-opacity disabled:opacity-40"
+          style={{ background: "var(--signal)", color: "var(--paper)", borderRadius: "var(--radius)" }}
         >
-          {saving ? "Saving..." : "Add to calendar"}
+          {saving ? "Saving…" : "Add to calendar"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-xl px-4 py-2 text-sm font-medium transition-colors"
-          style={{ border: "0.5px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+          className="lx-eyebrow px-4 py-2.5"
+          style={{ border: "1px solid var(--line-2)", color: "var(--ink-2)", borderRadius: "var(--radius)" }}
         >
           Cancel
         </button>
@@ -169,70 +139,67 @@ function DetailPanel({ detail, onClose }: { detail: DayDetail; onClose: () => vo
   const router = useRouter();
   const [adding, setAdding] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [deleting, setDeleting] = useState<number | null>(null);
 
-  const label = new Intl.DateTimeFormat("en-GB", {
-    weekday: "long", day: "numeric", month: "long",
-  }).format(new Date(`${detail.date}T00:00:00`));
+  const label = new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${detail.date}T00:00:00`));
 
   function handleSaved() {
     setSaved(true);
-    setTimeout(() => window.location.reload(), 1000);
+    setTimeout(() => window.location.reload(), 900);
+  }
+
+  async function remove(id: number) {
+    setDeleting(id);
+    try {
+      const res = await fetch(`/api/events/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        onClose();
+        router.refresh();
+      } else {
+        setDeleting(null);
+      }
+    } catch {
+      setDeleting(null);
+    }
   }
 
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center md:items-center" onClick={onClose}>
-      <div className="absolute inset-0" style={{ background: "rgba(6,6,8,0.7)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }} />
+      <div className="absolute inset-0" style={{ background: "rgba(26,24,22,0.35)", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)" }} />
       <div
-        className="relative z-50 w-full max-w-sm rounded-t-2xl md:rounded-2xl p-6"
-        style={{ background: "rgba(18,18,22,0.96)", border: "0.5px solid rgba(255,255,255,0.1)", boxShadow: "0 24px 80px rgba(0,0,0,0.6)" }}
+        className="relative z-50 w-full max-w-md p-6 md:p-7"
+        style={{ background: "var(--paper-2)", border: "1px solid var(--line-2)", borderRadius: "var(--radius-lg)", boxShadow: "0 24px 70px rgba(26,24,22,0.18)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-center justify-between">
-          <p className="font-semibold text-white">{label}</p>
-          <button
-            onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-lg transition-colors"
-            style={{ color: "rgba(255,255,255,0.4)" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLElement).style.color = "#fff"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.4)"; }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <h3 className="lx-serif" style={{ fontSize: 26, fontWeight: 600, color: "var(--ink)" }}>{label}</h3>
+          <button onClick={onClose} className="lx-eyebrow" style={{ color: "var(--ink-3)" }} aria-label="Close">Close</button>
         </div>
 
         {saved ? (
-          <p className="text-sm font-medium" style={{ color: "#5DCAA5" }}>Workout added to intervals.icu!</p>
+          <p className="lx-sans text-sm" style={{ color: "var(--signal-ink)" }}>Session added to the calendar.</p>
         ) : adding ? (
           <AddWorkoutForm date={detail.date} onCancel={() => setAdding(false)} onSaved={handleSaved} />
         ) : (
           <>
             {detail.activities.length === 0 && detail.planned.length === 0 && (
-              <p className="mb-5 text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>No activities or planned workouts.</p>
+              <p className="lx-sans mb-5 text-sm" style={{ color: "var(--ink-3)" }}>No sessions recorded or planned.</p>
             )}
 
             {detail.activities.length > 0 && (
-              <div className="mb-5">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>Completed</p>
-                <div className="flex flex-col gap-2">
+              <div className="mb-6">
+                <p className="lx-eyebrow mb-3">Completed</p>
+                <div className="flex flex-col gap-3">
                   {detail.activities.map((a) => {
-                    const c = typeColor(a.type);
+                    const meta = intensity(activityIntensity(a));
                     return (
-                      <div key={a.intervalsActivityId} className="flex items-center gap-3">
-                        <span className="rounded-md px-2 py-0.5 text-xs font-medium" style={{ background: c.bg, color: c.text }}>
-                          {shortType(a.type)}
-                        </span>
-                        <span className="text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>{fmtDuration(a.durationSec)}</span>
-                        {a.distanceM != null && (
-                          <span className="text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>{(a.distanceM / 1000).toFixed(1)} km</span>
-                        )}
-                        {a.avgPower != null && (
-                          <span className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>{a.avgPower} W</span>
-                        )}
-                        {a.trainingLoad != null && (
-                          <span className="ml-auto text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>load {Math.round(a.trainingLoad)}</span>
-                        )}
+                      <div key={a.intervalsActivityId} className="flex items-baseline gap-2.5" style={{ borderBottom: "1px solid var(--line)", paddingBottom: 10 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: "50%", background: `var(${meta.varName})`, flex: "none", transform: "translateY(1px)" }} />
+                        <span className="lx-sans text-sm font-medium" style={{ color: "var(--ink)" }}>{shortType(a.type)}</span>
+                        <span className="lx-num text-xs" style={{ color: "var(--ink-2)" }}>{fmtDuration(a.durationSec)}</span>
+                        {a.distanceM != null && <span className="lx-num text-xs" style={{ color: "var(--ink-3)" }}>{fmtDist(a.distanceM)}</span>}
+                        {a.avgPower != null && <span className="lx-num text-xs" style={{ color: "var(--ink-3)" }}>{a.avgPower}W</span>}
+                        {a.trainingLoad != null && <span className="lx-num ml-auto text-xs" style={{ color: "var(--ink-2)" }}>load {Math.round(a.trainingLoad)}</span>}
                       </div>
                     );
                   })}
@@ -241,54 +208,37 @@ function DetailPanel({ detail, onClose }: { detail: DayDetail; onClose: () => vo
             )}
 
             {detail.planned.length > 0 && (
-              <div className="mb-5">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>Planned</p>
-                <div className="flex flex-col gap-2">
-                  {detail.planned.map((w) => (
-                    <div key={`${w.date}-${w.name}`}>
-                      <div className="flex items-center gap-3">
-                        <span
-                          className="rounded-md px-2 py-0.5 text-xs font-medium"
-                          style={{ border: "0.5px dashed rgba(93,202,165,0.5)", background: "rgba(93,202,165,0.08)", color: "#5DCAA5" }}
-                        >
-                          {shortType(w.type)}
-                        </span>
-                        <span className="text-sm font-medium text-white">{w.name}</span>
-                        {w.plannedDurationSec != null && (
-                          <span className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>{fmtDuration(w.plannedDurationSec)}</span>
-                        )}
-                        {w.id != null && w.planId == null && (
-                          <span className="ml-auto">
-                            <DeleteWorkoutButton
-                              eventId={w.id}
-                              onSuccess={() => { onClose(); router.refresh(); }}
-                            />
-                          </span>
-                        )}
+              <div className="mb-6">
+                <p className="lx-eyebrow mb-3">Planned</p>
+                <div className="flex flex-col gap-3">
+                  {detail.planned.map((w) => {
+                    const meta = intensity(plannedIntensity(w));
+                    return (
+                      <div key={`${w.date}-${w.name}`} style={{ borderBottom: "1px solid var(--line)", paddingBottom: 10 }}>
+                        <div className="flex items-baseline gap-2.5">
+                          <span style={{ width: 8, height: 8, borderRadius: "50%", border: `1.5px solid var(${meta.varName})`, flex: "none", transform: "translateY(1px)" }} />
+                          <span className="lx-sans text-sm font-medium" style={{ color: "var(--ink)" }}>{w.name}</span>
+                          {w.plannedDurationSec != null && <span className="lx-num text-xs" style={{ color: "var(--ink-3)" }}>{fmtDuration(w.plannedDurationSec)}</span>}
+                          {w.id != null && w.planId == null && (
+                            <button onClick={() => remove(w.id!)} disabled={deleting === w.id} className="lx-eyebrow ml-auto disabled:opacity-40" style={{ color: "var(--ink-4)" }}>
+                              {deleting === w.id ? "…" : "Remove"}
+                            </button>
+                          )}
+                        </div>
+                        {w.description && <p className="lx-mono mt-1.5 pl-[18px] text-[11px] leading-relaxed" style={{ color: "var(--ink-3)" }}>{w.description}</p>}
                       </div>
-                      {w.description && (
-                        <>
-                          <p className="mt-1 pl-1 text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.35)" }}>{w.description}</p>
-                          <WorkoutBars description={w.description} />
-                        </>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             <button
               onClick={() => setAdding(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium transition-colors"
-              style={{ border: "0.5px dashed rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.4)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(93,202,165,0.5)"; (e.currentTarget as HTMLElement).style.color = "#5DCAA5"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.15)"; (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.4)"; }}
+              className="lx-eyebrow w-full py-2.5 transition-colors"
+              style={{ border: "1px dashed var(--line-2)", color: "var(--ink-2)", borderRadius: "var(--radius)" }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-              Add workout
+              + Add session
             </button>
           </>
         )}
@@ -304,13 +254,11 @@ export function CalendarGrid({
   month,
   activities,
   planned,
-  compact = false,
 }: {
   year: number;
   month: number;
   activities: Activity[];
   planned: PlannedWorkout[];
-  compact?: boolean;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const today = new Date().toISOString().slice(0, 10);
@@ -336,109 +284,83 @@ export function CalendarGrid({
   ];
   while (cells.length % 7 !== 0) cells.push(null);
 
-  const cellH = compact ? "h-16" : "h-20";
-  const selectedDetail = selected
-    ? { date: selected, ...(byDate.get(selected) ?? { activities: [], planned: [] }) }
-    : null;
+  const selectedDetail = selected ? { date: selected, ...(byDate.get(selected) ?? { activities: [], planned: [] }) } : null;
 
   return (
     <>
-      <div className="overflow-hidden rounded-xl" style={{ border: "0.5px solid rgba(255,255,255,0.08)" }}>
+      <div className="overflow-hidden lx-leaf">
         {/* Weekday headers */}
-        <div className="grid grid-cols-7" style={{ borderBottom: "0.5px solid rgba(255,255,255,0.08)" }}>
+        <div className="grid grid-cols-7" style={{ borderBottom: "1px solid var(--line-2)" }}>
           {WEEKDAYS.map((d, i) => (
-            <div
-              key={d}
-              className="py-2 text-center text-[11px] font-semibold uppercase tracking-wider"
-              style={{ color: i >= 5 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.35)" }}
-            >
+            <div key={d} className="lx-eyebrow py-2.5 text-center" style={{ color: i >= 5 ? "var(--ink-4)" : "var(--ink-3)", fontSize: 9.5 }}>
               {d}
             </div>
           ))}
         </div>
 
         {/* Day cells */}
-        <div
-          className="grid grid-cols-7"
-          style={{ borderTop: "0.5px solid rgba(255,255,255,0.04)" }}
-        >
+        <div className="grid grid-cols-7">
           {cells.map((day, idx) => {
             if (!day) {
-              return (
-                <div
-                  key={`pad-${idx}`}
-                  className={cellH}
-                  style={{ background: "rgba(255,255,255,0.01)", borderRight: "0.5px solid rgba(255,255,255,0.04)", borderBottom: "0.5px solid rgba(255,255,255,0.04)" }}
-                />
-              );
+              return <div key={`pad-${idx}`} className="h-20 md:h-24" style={{ background: "var(--paper-3)", borderRight: "1px solid var(--line)", borderBottom: "1px solid var(--line)" }} />;
             }
-            const d = new Date(year, month - 1, day);
             const iso = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
             const entry = byDate.get(iso);
             const isToday = iso === today;
             const isPast = iso < today;
+            const d = new Date(year, month - 1, day);
             const isWeekend = d.getDay() === 0 || d.getDay() === 6;
             const isSelected = selected === iso;
+            const acts = entry?.activities ?? [];
+            const plans = entry?.planned ?? [];
+            const totalEntries = acts.length + plans.length;
 
             return (
               <button
                 key={iso}
                 onClick={() => setSelected(iso === selected ? null : iso)}
-                className={`${cellH} p-1.5 text-left flex flex-col gap-0.5 transition-colors`}
+                className="flex h-20 flex-col gap-1 p-1.5 text-left transition-colors md:h-24"
                 style={{
-                  background: isSelected
-                    ? "rgba(93,202,165,0.08)"
-                    : isWeekend && !isToday
-                      ? "rgba(255,255,255,0.015)"
-                      : "transparent",
-                  borderRight: "0.5px solid rgba(255,255,255,0.04)",
-                  borderBottom: "0.5px solid rgba(255,255,255,0.04)",
-                  boxShadow: isSelected ? "inset 0 0 0 1px rgba(93,202,165,0.25)" : "none",
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSelected) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)";
-                }}
-                onMouseLeave={(e) => {
-                  if (!isSelected) (e.currentTarget as HTMLElement).style.background = isWeekend && !isToday ? "rgba(255,255,255,0.015)" : "transparent";
+                  background: isSelected ? "var(--signal-wash)" : isWeekend ? "var(--paper-3)" : "transparent",
+                  borderRight: "1px solid var(--line)",
+                  borderBottom: "1px solid var(--line)",
+                  boxShadow: isSelected ? "inset 0 0 0 1.5px var(--signal)" : "none",
                 }}
               >
                 <span
-                  className="flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium"
+                  className="lx-num flex h-5 w-5 items-center justify-center text-xs"
                   style={{
-                    background: isToday ? "linear-gradient(135deg, #1D9E75, #378ADD)" : "transparent",
-                    color: isToday
-                      ? "#fff"
-                      : isPast
-                        ? isWeekend ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.3)"
-                        : isWeekend ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.65)",
+                    background: isToday ? "var(--signal)" : "transparent",
+                    color: isToday ? "var(--paper)" : isPast ? "var(--ink-3)" : "var(--ink)",
+                    borderRadius: "50%",
+                    fontWeight: isToday ? 700 : 500,
                   }}
                 >
                   {day}
                 </span>
 
-                <div className="flex flex-col gap-0.5 overflow-hidden">
-                  {entry?.activities.slice(0, 2).map((a) => {
-                    const c = typeColor(a.type);
+                <div className="flex min-h-0 flex-col gap-0.5 overflow-hidden">
+                  {acts.slice(0, 2).map((a) => {
+                    const meta = intensity(activityIntensity(a));
                     return (
-                      <span
-                        key={a.intervalsActivityId}
-                        className="truncate rounded px-1 py-px text-[9px] font-semibold leading-tight"
-                        style={{ background: c.bg, color: c.text }}
-                      >
-                        {shortType(a.type)}
-                        {a.durationSec && !compact ? ` ${fmtDuration(a.durationSec)}` : ""}
+                      <span key={a.intervalsActivityId} className="flex items-center gap-1 truncate">
+                        <span style={{ width: 5, height: 5, borderRadius: "50%", background: `var(${meta.varName})`, flex: "none" }} />
+                        <span className="lx-sans truncate text-[10px] font-medium" style={{ color: "var(--ink-2)" }}>{shortType(a.type)}</span>
                       </span>
                     );
                   })}
-                  {entry?.planned.slice(0, compact ? 1 : 2).map((w) => (
-                    <span
-                      key={`${w.date}-${w.name}`}
-                      className="truncate rounded px-1 py-px text-[9px] font-semibold leading-tight"
-                      style={{ border: "0.5px dashed rgba(93,202,165,0.45)", color: "#5DCAA5" }}
-                    >
-                      {compact ? shortType(w.type) : w.name}
-                    </span>
-                  ))}
+                  {plans.slice(0, totalEntries > 2 ? 1 : 2 - acts.length).map((w) => {
+                    const meta = intensity(plannedIntensity(w));
+                    return (
+                      <span key={`${w.date}-${w.name}`} className="flex items-center gap-1 truncate">
+                        <span style={{ width: 5, height: 5, borderRadius: "50%", border: `1.5px solid var(${meta.varName})`, flex: "none" }} />
+                        <span className="lx-sans truncate text-[10px]" style={{ color: "var(--ink-3)" }}>{shortType(w.type)}</span>
+                      </span>
+                    );
+                  })}
+                  {totalEntries > 2 && (
+                    <span className="lx-mono text-[9px]" style={{ color: "var(--ink-4)" }}>+{totalEntries - 2}</span>
+                  )}
                 </div>
               </button>
             );
@@ -446,9 +368,7 @@ export function CalendarGrid({
         </div>
       </div>
 
-      {selectedDetail && (
-        <DetailPanel detail={selectedDetail} onClose={() => setSelected(null)} />
-      )}
+      {selectedDetail && <DetailPanel detail={selectedDetail} onClose={() => setSelected(null)} />}
     </>
   );
 }

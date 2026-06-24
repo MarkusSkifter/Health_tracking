@@ -2,34 +2,31 @@ import type { Activity, PlannedWorkout } from "@health/shared";
 import Link from "next/link";
 import { fetchActivities, fetchEvents } from "../../lib/api";
 import { CalendarGrid } from "../components/CalendarGrid";
+import { LedgerShell } from "../components/ledger/LedgerShell";
+import { intensity, type IntensityKey } from "../components/ledger/shared";
 
 export const revalidate = 60;
 
 type SearchParams = Promise<{ month?: string }>;
 
-function prevMonth(ym: string): string {
+function shiftMonth(ym: string, delta: number): string {
   const [y, mo] = ym.split("-").map(Number);
-  const d = new Date((y ?? 2024), (mo ?? 1) - 2, 1);
+  const d = new Date((y ?? 2024), (mo ?? 1) - 1 + delta, 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
-
-function nextMonth(ym: string): string {
-  const [y, mo] = ym.split("-").map(Number);
-  const d = new Date((y ?? 2024), (mo ?? 1), 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
 function monthLabel(ym: string): string {
-  return new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(
-    new Date(`${ym}-15`),
-  );
+  return new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(new Date(`${ym}-15`));
+}
+function monthShort(ym: string): string {
+  return new Intl.DateTimeFormat("en-GB", { month: "short", year: "2-digit" }).format(new Date(`${ym}-15`));
 }
 
-function monthShort(ym: string): string {
-  return new Intl.DateTimeFormat("en-GB", { month: "short", year: "2-digit" }).format(
-    new Date(`${ym}-15`),
-  );
-}
+const LEGEND: Array<{ key: IntensityKey; label: string }> = [
+  { key: "easy", label: "Recovery" },
+  { key: "aerobic", label: "Endurance" },
+  { key: "threshold", label: "Threshold" },
+  { key: "vo2", label: "VO₂max" },
+];
 
 export default async function CalendarPage({ searchParams }: { searchParams: SearchParams }) {
   const { month: mp } = await searchParams;
@@ -47,82 +44,60 @@ export default async function CalendarPage({ searchParams }: { searchParams: Sea
   let activities: Activity[] = [];
   let planned: PlannedWorkout[] = [];
   try {
-    [activities, planned] = await Promise.all([
-      fetchActivities(from, to),
-      fetchEvents(from, to),
-    ]);
+    [activities, planned] = await Promise.all([fetchActivities(from, to), fetchEvents(from, to)]);
   } catch {
-    // show empty calendar
+    /* show empty calendar */
   }
 
-  const prev = prevMonth(month);
-  const next = nextMonth(month);
-  const isFuture = next > nextMonth(thisMonth);
+  const prev = shiftMonth(month, -1);
+  const next = shiftMonth(month, 1);
+  const isFuture = next > shiftMonth(thisMonth, 1);
 
-  const navBtnStyle = "flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-medium transition-colors";
+  const ticker = [
+    "intervals.icu · connected",
+    `${monthLabel(month).toLowerCase()} · ${activities.length} sessions logged`,
+    `${planned.length} planned`,
+    "coros · linked",
+  ];
 
   return (
-    <main className="flex flex-col gap-8">
-      <header className="flex items-end justify-between gap-4">
+    <LedgerShell ticker={ticker}>
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>Calendar</p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-white">
+          <p className="lx-eyebrow">Training log</p>
+          <h1 className="lx-serif mt-2" style={{ fontSize: "clamp(40px, 7vw, 72px)", fontWeight: 600, lineHeight: 0.95, letterSpacing: "-0.02em", color: "var(--ink)" }}>
             {monthLabel(month)}
           </h1>
         </div>
-        <div className="flex items-center gap-0.5">
-          <Link
-            href={`/calendar?month=${prev}`}
-            className={navBtnStyle}
-            style={{ color: "rgba(255,255,255,0.4)" }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15.75 19.5L8.25 12l7.5-7.5" />
-            </svg>
-            {monthShort(prev)}
+        <div className="flex items-center gap-5">
+          <Link href={`/calendar?month=${prev}`} className="lx-eyebrow transition-colors" style={{ color: "var(--ink-2)" }}>
+            ← {monthShort(prev)}
           </Link>
           {!isFuture && (
-            <Link
-              href={`/calendar?month=${next}`}
-              className={navBtnStyle}
-              style={{ color: "rgba(255,255,255,0.4)" }}
-            >
-              {monthShort(next)}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-              </svg>
+            <Link href={`/calendar?month=${next}`} className="lx-eyebrow transition-colors" style={{ color: "var(--ink-2)" }}>
+              {monthShort(next)} →
             </Link>
           )}
         </div>
       </header>
 
-      <div className="glass-card rounded-2xl p-4">
-        <CalendarGrid
-          year={year}
-          month={monthNum}
-          activities={activities}
-          planned={planned}
-        />
+      <div className="mt-8">
+        <CalendarGrid year={year} month={monthNum} activities={activities} planned={planned} />
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-5 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "rgba(29,158,117,0.3)" }} /> Run
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "rgba(251,191,36,0.3)" }} /> Ride
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "rgba(55,138,221,0.3)" }} /> Swim
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "rgba(255,255,255,0.08)" }} /> Other
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm" style={{ border: "0.5px dashed rgba(93,202,165,0.5)" }} /> Planned
+      <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2">
+        {LEGEND.map((l) => (
+          <span key={l.key} className="lx-eyebrow flex items-center gap-1.5" style={{ color: "var(--ink-3)" }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: `var(${intensity(l.key).varName})` }} />
+            {l.label}
+          </span>
+        ))}
+        <span className="lx-eyebrow ml-auto flex items-center gap-4" style={{ color: "var(--ink-4)" }}>
+          <span className="flex items-center gap-1.5"><span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--ink-3)" }} /> completed</span>
+          <span className="flex items-center gap-1.5"><span style={{ width: 8, height: 8, borderRadius: "50%", border: "1.5px solid var(--ink-3)" }} /> planned</span>
         </span>
       </div>
-    </main>
+    </LedgerShell>
   );
 }

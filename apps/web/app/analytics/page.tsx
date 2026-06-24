@@ -3,40 +3,35 @@ import Link from "next/link";
 import { fetchActivities, fetchAnalytics } from "../../lib/api";
 import { AnalyticsCharts } from "../components/AnalyticsCharts";
 import { AnalyticsDailyTable } from "../components/AnalyticsDailyTable";
+import { LedgerShell } from "../components/ledger/LedgerShell";
 
 export const revalidate = 60;
 
 type SearchParams = Promise<{ month?: string }>;
 
-function prevMonth(ym: string): string {
+function shiftMonth(ym: string, delta: number): string {
   const [y, mo] = ym.split("-").map(Number);
-  const d = new Date((y ?? 2024), (mo ?? 1) - 2, 1);
+  const d = new Date((y ?? 2024), (mo ?? 1) - 1 + delta, 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
-
-function nextMonth(ym: string): string {
-  const [y, mo] = ym.split("-").map(Number);
-  const d = new Date((y ?? 2024), (mo ?? 1), 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
 function monthLabel(ym: string): string {
-  return new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(
-    new Date(`${ym}-15`),
-  );
+  return new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(new Date(`${ym}-15`));
 }
-
 function monthShort(ym: string): string {
-  return new Intl.DateTimeFormat("en-GB", { month: "short", year: "2-digit" }).format(
-    new Date(`${ym}-15`),
+  return new Intl.DateTimeFormat("en-GB", { month: "short", year: "2-digit" }).format(new Date(`${ym}-15`));
+}
+
+function Rule({ label, aside }: { label: string; aside?: string }) {
+  return (
+    <div className="lx-rule mb-6">
+      <span style={{ width: 7, height: 7, background: "var(--signal)", borderRadius: "50%", flex: "none" }} />
+      <h2 className="lx-serif" style={{ fontSize: "clamp(24px, 3.5vw, 32px)", fontWeight: 600, letterSpacing: "-0.01em", color: "var(--ink)", flex: "none" }}>{label}</h2>
+      {aside && <span className="lx-eyebrow shrink-0">{aside}</span>}
+    </div>
   );
 }
 
-export default async function AnalyticsPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default async function AnalyticsPage({ searchParams }: { searchParams: SearchParams }) {
   const { month: mp } = await searchParams;
   const now = new Date();
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -52,77 +47,57 @@ export default async function AnalyticsPage({
   let days: AnalyticsDay[] = [];
   let activityList: Activity[] = [];
   try {
-    [days, activityList] = await Promise.all([
-      fetchAnalytics(from, to),
-      fetchActivities(from, to),
-    ]);
+    [days, activityList] = await Promise.all([fetchAnalytics(from, to), fetchActivities(from, to)]);
   } catch {
-    // show empty state
+    /* show empty state */
   }
 
-  const prev = prevMonth(month);
-  const next = nextMonth(month);
+  const prev = shiftMonth(month, -1);
+  const next = shiftMonth(month, 1);
   const isCurrentOrFuture = next > thisMonth;
 
-  const navBtnStyle = "flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-medium transition-colors";
+  const ticker = [
+    "intervals.icu · connected",
+    `${monthLabel(month).toLowerCase()} · ${days.length} days observed`,
+    `${activityList.length} sessions`,
+    "coros · linked",
+  ];
 
   return (
-    <main className="flex flex-col gap-8">
-      <header className="flex items-end justify-between gap-4">
+    <LedgerShell ticker={ticker}>
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>Analytics</p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-white">
+          <p className="lx-eyebrow">Performance review</p>
+          <h1 className="lx-serif mt-2" style={{ fontSize: "clamp(40px, 7vw, 72px)", fontWeight: 600, lineHeight: 0.95, letterSpacing: "-0.02em", color: "var(--ink)" }}>
             {monthLabel(month)}
           </h1>
         </div>
-        <div className="flex items-center gap-0.5">
-          <Link
-            href={`/analytics?month=${prev}`}
-            className={navBtnStyle}
-            style={{ color: "rgba(255,255,255,0.4)" }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15.75 19.5L8.25 12l7.5-7.5" />
-            </svg>
-            {monthShort(prev)}
-          </Link>
+        <div className="flex items-center gap-5">
+          <Link href={`/analytics?month=${prev}`} className="lx-eyebrow" style={{ color: "var(--ink-2)" }}>← {monthShort(prev)}</Link>
           {!isCurrentOrFuture && (
-            <Link
-              href={`/analytics?month=${next}`}
-              className={navBtnStyle}
-              style={{ color: "rgba(255,255,255,0.4)" }}
-            >
-              {monthShort(next)}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-              </svg>
-            </Link>
+            <Link href={`/analytics?month=${next}`} className="lx-eyebrow" style={{ color: "var(--ink-2)" }}>{monthShort(next)} →</Link>
           )}
         </div>
       </header>
 
       {days.length === 0 ? (
-        <div
-          className="flex h-48 flex-col items-center justify-center gap-2 rounded-2xl text-center"
-          style={{ border: "0.5px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)" }}
-        >
-          <p className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.4)" }}>No data for {monthLabel(month)}</p>
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>Sync your account to import data</p>
+        <div className="mt-12 flex h-56 flex-col items-center justify-center gap-2 text-center lx-leaf">
+          <p className="lx-serif" style={{ fontSize: 24, fontWeight: 600, color: "var(--ink-2)" }}>No data for {monthLabel(month)}</p>
+          <p className="lx-sans text-sm" style={{ color: "var(--ink-3)" }}>Sync your account to import this month.</p>
         </div>
       ) : (
         <>
-          <section>
+          <section className="mt-12">
+            <Rule label="Trends" aside={`${days.length} days`} />
             <AnalyticsCharts days={days} />
           </section>
 
-          <section>
-            <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
-              Daily log
-            </p>
+          <section className="mt-16">
+            <Rule label="Daily log" aside="tap a day to expand" />
             <AnalyticsDailyTable days={days} activityList={activityList} />
           </section>
         </>
       )}
-    </main>
+    </LedgerShell>
   );
 }
