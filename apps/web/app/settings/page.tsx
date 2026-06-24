@@ -1,74 +1,63 @@
+import type { ReactNode } from "react";
 import { ImportHistoryButton } from "../components/ImportHistoryButton";
 import { PushNotificationToggle } from "../components/PushNotificationToggle";
 import { TrainingSettings } from "../components/TrainingSettings";
 import { AthleteProfile } from "../components/AthleteProfile";
 import { TrainingGoals } from "../components/TrainingGoals";
+import { LedgerShell } from "../components/ledger/LedgerShell";
+
+function Row({ title, desc, children }: { title: string; desc: ReactNode; children?: ReactNode }) {
+  return (
+    <section className="grid gap-5 py-9 md:grid-cols-[300px_1fr] md:gap-14" style={{ borderTop: "1px solid var(--line)" }}>
+      <div>
+        <h2 className="lx-serif" style={{ fontSize: 26, fontWeight: 600, letterSpacing: "-0.01em", color: "var(--ink)" }}>{title}</h2>
+        <p className="lx-sans mt-2 text-sm leading-relaxed" style={{ color: "var(--ink-2)" }}>{desc}</p>
+      </div>
+      {children && <div>{children}</div>}
+    </section>
+  );
+}
 
 export default function SettingsPage() {
   return (
-    <main className="flex flex-col gap-8">
+    <LedgerShell>
       <header>
-        <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>Settings</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-white">Account</h1>
+        <p className="lx-eyebrow">Settings</p>
+        <h1 className="lx-serif mt-2" style={{ fontSize: "clamp(40px, 7vw, 72px)", fontWeight: 600, lineHeight: 0.95, letterSpacing: "-0.02em", color: "var(--ink)" }}>
+          Account
+        </h1>
       </header>
 
-      <div className="flex flex-col gap-4">
-        <section className="glass-card rounded-2xl p-6">
-          <h2 className="text-sm font-semibold text-white">Athlete profile</h2>
-          <p className="mt-1.5 mb-5 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
-            Describe yourself and your training background. The AI coach uses this to personalise suggestions to your fitness level and schedule.
-          </p>
+      <div className="mt-8">
+        <Row title="Athlete profile" desc="Describe yourself and your training background. The AI coach uses this to personalise suggestions to your fitness level and schedule.">
           <AthleteProfile />
-        </section>
+        </Row>
 
-        <section className="glass-card rounded-2xl p-6">
-          <h2 className="text-sm font-semibold text-white">Training goals</h2>
-          <p className="mt-1.5 mb-5 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
-            Add races or events you are training toward. The AI coach will periodize your training — base, build, peak, taper — based on how far away each goal is.
-          </p>
+        <Row title="Training goals" desc="Add races or events you're training toward. The coach periodizes your training — base, build, peak, taper — based on how far away each goal is.">
           <TrainingGoals />
-        </section>
+        </Row>
 
-        <section className="glass-card rounded-2xl p-6">
-          <h2 className="text-sm font-semibold text-white">Training thresholds</h2>
-          <p className="mt-1.5 mb-5 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
-            Set your FTP and run threshold pace so the AI coach can tailor interval targets and zone descriptions to your fitness level.
-          </p>
+        <Row title="Training thresholds" desc="Set your FTP and run threshold pace so the coach can tailor interval targets and zone descriptions to your fitness level.">
           <TrainingSettings />
-        </section>
+        </Row>
 
-        <section className="glass-card rounded-2xl p-6">
-          <h2 className="text-sm font-semibold text-white">Data source</h2>
-          <p className="mt-1.5 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
-            v1 runs for a single intervals.icu account configured on the server. Per-account OAuth is planned for v2.
-          </p>
-        </section>
-
-        <section className="glass-card rounded-2xl p-6">
-          <h2 className="text-sm font-semibold text-white">Import history</h2>
-          <p className="mt-1.5 mb-4 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
-            The daily sync keeps a rolling 7-day window. Use this to backfill your full history from intervals.icu — up to one year of activities and wellness data.
-          </p>
+        <Row title="Import history" desc="The daily sync keeps a rolling 7-day window. Use this to backfill your full history from intervals.icu — up to a year of activities and wellness data.">
           <ImportHistoryButton />
-        </section>
+        </Row>
 
-        <section className="glass-card rounded-2xl p-6">
-          <h2 className="mb-4 text-sm font-semibold text-white">Daily notifications</h2>
+        <Row
+          title="Daily notifications"
+          desc="On iPhone, add the app to your Home Screen first: tap Share in Safari, then “Add to Home Screen.”"
+        >
           <PushNotificationToggle />
-          <p className="mt-4 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
-            On iPhone, the app must be added to your Home Screen first: tap the Share icon in Safari, then "Add to Home Screen."
-          </p>
-        </section>
+        </Row>
 
-        <section className="glass-card rounded-2xl p-6">
-          <h2 className="text-sm font-semibold text-white">Connect intervals.icu</h2>
-          <p className="mt-1.5 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
-            Per-account OAuth connection is planned for v2.
-          </p>
-        </section>
+        <Row title="Data source" desc="v1 runs for a single intervals.icu account configured on the server. Per-account OAuth is planned for v2." />
+
+        <Row title="Connect intervals.icu" desc="Per-account OAuth connection is planned for v2." />
       </div>
 
-      <p className="text-center text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>Training Insights v1</p>
-    </main>
+      <p className="lx-mono mt-10 text-center text-[11px]" style={{ color: "var(--ink-4)" }}>Training Ledger · v1</p>
+    </LedgerShell>
   );
 }

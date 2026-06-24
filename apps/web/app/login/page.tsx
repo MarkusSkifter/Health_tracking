@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { ledgerInput, ledgerPrimaryBtn } from "../components/ledger/forms";
 
 function LoginForm() {
   const router = useRouter();
@@ -34,13 +35,7 @@ function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div>
-        <label
-          htmlFor="password"
-          className="mb-1.5 block text-sm font-medium"
-          style={{ color: "rgba(255,255,255,0.5)" }}
-        >
-          Password
-        </label>
+        <label htmlFor="password" className="lx-eyebrow mb-2 block">Password</label>
         <input
           id="password"
           type="password"
@@ -48,37 +43,14 @@ function LoginForm() {
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          style={{
-            width: "100%",
-            background: "var(--ink-3)",
-            border: "0.5px solid var(--line-2)",
-            borderRadius: 8,
-            padding: "10px 14px",
-            fontSize: 14,
-            fontFamily: "var(--type-mono)",
-            color: "#fff",
-            outline: "none",
-            transition: "border-color 0.15s",
-          }}
+          style={{ ...ledgerInput, fontFamily: "var(--type-mono)" }}
           placeholder="Enter password"
         />
       </div>
 
-      {error && <p className="readout text-sm" style={{ color: "#F87171" }}>{error}</p>}
+      {error && <p className="lx-mono text-sm" style={{ color: "var(--signal)" }}>{error}</p>}
 
-      <button
-        type="submit"
-        disabled={loading || !password}
-        className="rounded-lg px-4 py-2.5 text-white transition-opacity hover:opacity-90 disabled:opacity-40"
-        style={{
-          fontFamily: "var(--type-mono)",
-          fontSize: 12,
-          fontWeight: 600,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          background: "linear-gradient(135deg, #1D9E75, #2A7FC0)",
-        }}
-      >
+      <button type="submit" disabled={loading || !password} className="mt-1 transition-opacity hover:opacity-90 disabled:opacity-40" style={{ ...ledgerPrimaryBtn, padding: "12px 18px" }}>
         {loading ? "Signing in…" : "Sign in"}
       </button>
     </form>
@@ -87,35 +59,21 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <main className="relative flex min-h-dvh items-center justify-center px-4" style={{ background: "#060608" }}>
-      {/* Subtle top-right ambient glow on login too */}
-      <div
-        style={{
-          position: "absolute",
-          top: -100,
-          right: -100,
-          width: 500,
-          height: 500,
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(29,158,117,0.18) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }}
-      />
+    <main className="ledger relative flex min-h-dvh items-center justify-center px-5">
+      {/* faint signal rule, top — a printed accent */}
+      <div className="absolute inset-x-0 top-0 h-[3px]" style={{ background: "var(--signal)", opacity: 0.9 }} />
+
       <div className="relative z-10 w-full max-w-sm">
-        <div className="mb-8 flex items-center gap-3">
-          <div
-            className="flex h-9 w-9 items-center justify-center rounded-md"
-            style={{ background: "var(--ink-3)", border: "0.5px solid var(--line-2)" }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5dcaa5" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-            </svg>
-          </div>
-          <div>
-            <p className="chan">Training</p>
-            <h1 className="stat mt-0.5 text-xl text-white">Insights</h1>
-          </div>
+        <div className="mb-10 flex items-baseline gap-2.5">
+          <span className="lx-serif" style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.01em", color: "var(--ink)" }}>Ledger</span>
+          <span className="lx-eyebrow">Training</span>
         </div>
+
+        <h1 className="lx-serif" style={{ fontSize: "clamp(40px, 9vw, 60px)", fontWeight: 600, lineHeight: 0.95, letterSpacing: "-0.02em", color: "var(--ink)" }}>
+          Sign in
+        </h1>
+        <p className="lx-sans mb-8 mt-2 text-sm" style={{ color: "var(--ink-2)" }}>Your daily training ledger awaits.</p>
+
         <Suspense>
           <LoginForm />
         </Suspense>

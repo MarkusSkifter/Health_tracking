@@ -3,6 +3,7 @@
 import type { TrainingGoal } from "@health/shared";
 import { useEffect, useState } from "react";
 import { createGoal, deleteGoal, fetchGoals } from "../../lib/api";
+import { ledgerInput, ledgerGhostBtn, ledgerPrimaryBtn } from "./ledger/forms";
 
 type GoalWithMeta = TrainingGoal & { isPast: boolean };
 
@@ -71,39 +72,33 @@ export function TrainingGoals() {
   return (
     <div className="flex flex-col gap-4">
       {loading ? (
-        <p className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>Loading…</p>
+        <p className="lx-sans text-sm" style={{ color: "var(--ink-3)" }}>Loading…</p>
       ) : (
         <>
           {upcoming.length === 0 && !adding && (
-            <p className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
+            <p className="lx-sans text-sm" style={{ color: "var(--ink-3)" }}>
               No upcoming goals yet. Add one below to focus your training.
             </p>
           )}
 
           {upcoming.map((g) => {
             const days = daysUntil(g.targetDate);
+            const accent = days < 30 ? "var(--signal)" : "var(--ink)";
             return (
-              <div key={g.id} className="flex items-start gap-3 rounded-2xl px-4 py-3.5" style={{ background: "rgba(255,255,255,0.05)", border: "0.5px solid rgba(255,255,255,0.1)" }}>
+              <div key={g.id} className="flex items-start gap-3 lx-leaf px-4 py-3.5">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-white">{g.eventName}</p>
-                  <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-                    {g.eventType && <span>{g.eventType}</span>}
-                    <span>{formatTargetDate(g.targetDate)}</span>
-                    <span className="font-semibold" style={{ color: days < 30 ? "#F87171" : days < 90 ? "#FCD34D" : "#5DCAA5" }}>
-                      {days > 0 ? `${days} days away` : days === 0 ? "Today!" : `${Math.abs(days)} days ago`}
+                  <p className="lx-sans text-sm font-semibold" style={{ color: "var(--ink)" }}>{g.eventName}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                    {g.eventType && <span className="lx-eyebrow" style={{ color: "var(--ink-3)" }}>{g.eventType}</span>}
+                    <span className="lx-num text-xs" style={{ color: "var(--ink-2)" }}>{formatTargetDate(g.targetDate)}</span>
+                    <span className="lx-num text-xs" style={{ color: accent, fontWeight: 600 }}>
+                      {days > 0 ? `${days} days away` : days === 0 ? "Today" : `${Math.abs(days)} days ago`}
                     </span>
                   </div>
-                  {g.notes && <p className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{g.notes}</p>}
+                  {g.notes && <p className="lx-sans mt-1 text-xs" style={{ color: "var(--ink-3)" }}>{g.notes}</p>}
                 </div>
-                <button
-                  onClick={() => handleDelete(g.id)}
-                  className="mt-0.5 shrink-0 rounded-lg p-1.5 transition-opacity hover:opacity-60"
-                  style={{ color: "rgba(255,255,255,0.3)" }}
-                  aria-label="Delete goal"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
-                  </svg>
+                <button onClick={() => handleDelete(g.id)} className="lx-eyebrow mt-0.5 shrink-0" style={{ color: "var(--ink-4)" }} aria-label="Delete goal">
+                  Remove
                 </button>
               </div>
             );
@@ -111,18 +106,14 @@ export function TrainingGoals() {
 
           {past.length > 0 && (
             <div className="flex flex-col gap-2">
-              <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.2)" }}>Past goals</p>
+              <p className="lx-eyebrow mt-2" style={{ color: "var(--ink-4)" }}>Past goals</p>
               {past.map((g) => (
-                <div key={g.id} className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: "rgba(255,255,255,0.03)", border: "0.5px solid rgba(255,255,255,0.07)" }}>
+                <div key={g.id} className="flex items-center justify-between py-2.5" style={{ borderBottom: "1px solid var(--line)" }}>
                   <div>
-                    <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>{g.eventName}</p>
-                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>{formatTargetDate(g.targetDate)}</p>
+                    <p className="lx-sans text-sm" style={{ color: "var(--ink-2)" }}>{g.eventName}</p>
+                    <p className="lx-num text-xs" style={{ color: "var(--ink-4)" }}>{formatTargetDate(g.targetDate)}</p>
                   </div>
-                  <button onClick={() => handleDelete(g.id)} className="rounded-lg p-1.5 hover:opacity-60" style={{ color: "rgba(255,255,255,0.2)" }} aria-label="Delete goal">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
+                  <button onClick={() => handleDelete(g.id)} className="lx-eyebrow" style={{ color: "var(--ink-4)" }} aria-label="Delete goal">Remove</button>
                 </div>
               ))}
             </div>
@@ -131,82 +122,39 @@ export function TrainingGoals() {
       )}
 
       {adding ? (
-        <div className="flex flex-col gap-3 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.05)", border: "0.5px solid rgba(255,255,255,0.12)" }}>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>Event name *</label>
-            <input
-              type="text"
-              placeholder="e.g. Copenhagen Half Marathon"
-              value={form.eventName}
-              onChange={(e) => setForm((f) => ({ ...f, eventName: e.target.value }))}
-              className="rounded-xl border px-3 py-2 text-sm text-white placeholder:text-[rgba(255,255,255,0.2)] focus:outline-none"
-              style={{ background: "rgba(255,255,255,0.05)", border: "0.5px solid rgba(255,255,255,0.12)" }}
-            />
+        <div className="flex flex-col gap-3 lx-leaf p-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="lx-eyebrow">Event name *</label>
+            <input type="text" placeholder="e.g. Copenhagen Half Marathon" value={form.eventName} onChange={(e) => setForm((f) => ({ ...f, eventName: e.target.value }))} style={ledgerInput} />
           </div>
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="mb-1 block text-xs font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>Target date *</label>
-              <input
-                type="date"
-                value={form.targetDate}
-                onChange={(e) => setForm((f) => ({ ...f, targetDate: e.target.value }))}
-                className="w-full rounded-xl border px-3 py-2 text-sm text-white focus:outline-none"
-                style={{ background: "rgba(255,255,255,0.05)", border: "0.5px solid rgba(255,255,255,0.12)", colorScheme: "dark" }}
-              />
+              <label className="lx-eyebrow mb-1.5 block">Target date *</label>
+              <input type="date" value={form.targetDate} onChange={(e) => setForm((f) => ({ ...f, targetDate: e.target.value }))} style={{ ...ledgerInput, colorScheme: "light" }} />
             </div>
             <div className="flex-1">
-              <label className="mb-1 block text-xs font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>Type</label>
-              <select
-                value={form.eventType}
-                onChange={(e) => setForm((f) => ({ ...f, eventType: e.target.value }))}
-                className="w-full rounded-xl border px-3 py-2 text-sm text-white focus:outline-none"
-                style={{ background: "rgba(30,30,40,0.95)", border: "0.5px solid rgba(255,255,255,0.12)" }}
-              >
+              <label className="lx-eyebrow mb-1.5 block">Type</label>
+              <select value={form.eventType} onChange={(e) => setForm((f) => ({ ...f, eventType: e.target.value }))} style={ledgerInput}>
                 <option value="">Any</option>
                 {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>Notes (optional)</label>
-            <input
-              type="text"
-              placeholder="e.g. Goal time sub-2h, flat course"
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-              className="w-full rounded-xl border px-3 py-2 text-sm text-white placeholder:text-[rgba(255,255,255,0.2)] focus:outline-none"
-              style={{ background: "rgba(255,255,255,0.05)", border: "0.5px solid rgba(255,255,255,0.12)" }}
-            />
+            <label className="lx-eyebrow mb-1.5 block">Notes (optional)</label>
+            <input type="text" placeholder="e.g. Goal time sub-2h, flat course" value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} style={ledgerInput} />
           </div>
-          {error && <p className="text-xs" style={{ color: "#F87171" }}>{error}</p>}
+          {error && <p className="lx-mono text-xs" style={{ color: "var(--signal)" }}>{error}</p>}
           <div className="flex gap-2">
-            <button
-              onClick={handleAdd}
-              disabled={saving}
-              className="rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-50"
-              style={{ background: "rgba(93,202,165,0.15)", color: "#5DCAA5" }}
-            >
+            <button onClick={handleAdd} disabled={saving} className="transition-opacity disabled:opacity-50" style={ledgerPrimaryBtn}>
               {saving ? "Saving…" : "Add goal"}
             </button>
-            <button
-              onClick={() => { setAdding(false); setError(null); }}
-              className="rounded-xl px-4 py-2 text-sm"
-              style={{ color: "rgba(255,255,255,0.4)" }}
-            >
-              Cancel
-            </button>
+            <button onClick={() => { setAdding(false); setError(null); }} style={ledgerGhostBtn}>Cancel</button>
           </div>
         </div>
       ) : (
-        <button
-          onClick={() => setAdding(true)}
-          className="flex items-center gap-2 self-start rounded-xl px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-80"
-          style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Add goal
+        <button onClick={() => setAdding(true)} className="self-start transition-opacity hover:opacity-80" style={ledgerGhostBtn}>
+          + Add goal
         </button>
       )}
     </div>

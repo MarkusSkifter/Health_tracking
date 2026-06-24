@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ledgerPrimaryBtn } from "./ledger/forms";
 
 export function ImportHistoryButton() {
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
@@ -23,26 +24,20 @@ export function ImportHistoryButton() {
 
   if (state === "done") {
     return (
-      <p className="text-sm font-medium" style={{ color: "#5DCAA5" }}>
-        Import complete — refresh Analytics to see your full history.
+      <p className="lx-sans text-sm font-medium" style={{ color: "var(--signal-ink)" }}>
+        Import complete — open Analytics to see your full history.
       </p>
     );
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <button
-        onClick={handleImport}
-        disabled={state === "loading"}
-        className="w-fit rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all duration-150 disabled:opacity-50"
-        style={{ background: state === "error" ? "rgba(248,113,113,0.2)" : "linear-gradient(135deg, #1D9E75, #2A7FC0)" }}
-      >
-        {state === "loading"
-          ? "Importing… (this may take a minute)"
-          : state === "error"
-            ? "Failed — retry"
-            : "Import full history"}
-      </button>
-    </div>
+    <button
+      onClick={handleImport}
+      disabled={state === "loading"}
+      className="w-fit transition-opacity disabled:opacity-50"
+      style={state === "error" ? { ...ledgerPrimaryBtn, background: "var(--signal-ink)" } : ledgerPrimaryBtn}
+    >
+      {state === "loading" ? "Importing… (this may take a minute)" : state === "error" ? "Failed — retry" : "Import full history"}
+    </button>
   );
 }
