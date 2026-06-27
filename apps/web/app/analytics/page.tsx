@@ -89,7 +89,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Se
         <>
           <section className="mt-12">
             <Rule label="Trends" aside={`${days.length} days`} />
-            <AnalyticsCharts days={days} />
+            <AnalyticsCharts days={days} activityList={activityList} />
           </section>
 
           <section className="mt-16">

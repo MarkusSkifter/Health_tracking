@@ -58,6 +58,13 @@ export async function storeActivities(
       continue;
     }
 
+    // intervals.icu returns stub records for Strava-sourced activities with a
+    // _note explaining the data is unavailable. Skip them — there is nothing
+    // to store, and they would show up as "Unknown" workouts in the calendar.
+    if (parsed._note != null) {
+      console.info(`[ingest] skipping stub activity id=${parsed.id} (${parsed._note})`);
+      continue;
+    }
 
     const json = item as Record<string, unknown>;
 

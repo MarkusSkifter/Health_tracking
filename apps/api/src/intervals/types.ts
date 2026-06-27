@@ -24,6 +24,9 @@ export const intervalsActivitySchema = z.object({
   average_watts: z.coerce.number().nullish(),
   average_heartrate: z.coerce.number().nullish(),
   icu_training_load: z.coerce.number().nullish(),
+  // Stub detection: intervals.icu sets _note when a third-party source (e.g.
+  // Strava) owns the activity and prevents the data from being served via API.
+  _note: z.string().nullish(),
 });
 
 export const intervalsWellnessSchema = z.object({
