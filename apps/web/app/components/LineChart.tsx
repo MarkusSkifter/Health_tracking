@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 export interface ChartPoint {
   date: string;
@@ -13,6 +13,11 @@ interface LineChartProps {
   height?: number;
   format?: (v: number) => string;
   unit?: string;
+  selectionStart?: number | null;
+  selectionEnd?: number | null;
+  onRangeStart?: (idx: number) => void;
+  onRangeUpdate?: (idx: number) => void;
+  onRangeEnd?: () => void;
 }
 
 export function LineChart({
@@ -21,8 +26,14 @@ export function LineChart({
   height = 80,
   format,
   unit = "",
+  selectionStart = null,
+  selectionEnd = null,
+  onRangeStart,
+  onRangeUpdate,
+  onRangeEnd,
 }: LineChartProps) {
   const [hovered, setHovered] = useState<number | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   const validData = data.filter((d): d is { date: string; value: number } => d.value !== null);
 
@@ -75,12 +86,56 @@ export function LineChart({
     return iso.slice(5).replace("-", "/");
   }
 
+  function getIdxFromClientX(clientX: number): number {
+    if (!svgRef.current) return 0;
+    const rect = svgRef.current.getBoundingClientRect();
+    const relX = ((clientX - rect.left) / rect.width) * W;
+    const idx = Math.round(((relX - px) / cw) * (data.length - 1));
+    return Math.max(0, Math.min(data.length - 1, idx));
+  }
+
+  const hasSel = selectionStart !== null && selectionEnd !== null;
+  const selLo = hasSel ? Math.min(selectionStart!, selectionEnd!) : 0;
+  const selHi = hasSel ? Math.max(selectionStart!, selectionEnd!) : 0;
+  const step = data.length > 1 ? cw / (data.length - 1) : cw;
+  const selX1 = hasSel ? Math.max(px, (positions[selLo]?.x ?? px) - step / 2) : 0;
+  const selX2 = hasSel ? Math.min(px + cw, (positions[selHi]?.x ?? px + cw) + step / 2) : 0;
+
   return (
     <div className="select-none" onMouseLeave={() => setHovered(null)}>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height }} role="img" aria-label="Metric trend chart">
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full"
+        style={{ height, cursor: onRangeStart ? "crosshair" : "default" }}
+        role="img"
+        aria-label="Metric trend chart"
+        onPointerDown={(e) => {
+          if (!onRangeStart) return;
+          const idx = getIdxFromClientX(e.clientX);
+          onRangeStart(idx);
+          (e.currentTarget as SVGSVGElement).setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (!onRangeUpdate || !(e.buttons & 1)) return;
+          onRangeUpdate(getIdxFromClientX(e.clientX));
+        }}
+        onPointerUp={() => onRangeEnd?.()}
+      >
         {[0, 0.5, 1].map((t) => (
           <line key={t} x1={px} x2={px + cw} y1={py + ch * (1 - t)} y2={py + ch * (1 - t)} stroke="var(--line)" strokeWidth="1" />
         ))}
+
+        {hasSel && (
+          <rect
+            x={selX1.toFixed(1)}
+            y={py}
+            width={Math.max(0, selX2 - selX1).toFixed(1)}
+            height={ch}
+            fill="var(--signal)"
+            opacity={0.12}
+          />
+        )}
 
         {pathD && <path d={pathD} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />}
 
@@ -98,7 +153,17 @@ export function LineChart({
         {positions.map((p, i) => {
           const leftX = i > 0 ? (positions[i - 1]!.x + p.x) / 2 : px;
           const rightX = i < positions.length - 1 ? (p.x + positions[i + 1]!.x) / 2 : px + cw;
-          return <rect key={i} x={leftX} y={py} width={Math.max(rightX - leftX, 1)} height={ch} fill="transparent" onMouseEnter={() => setHovered(i)} />;
+          return (
+            <rect
+              key={i}
+              x={leftX}
+              y={py}
+              width={Math.max(rightX - leftX, 1)}
+              height={ch}
+              fill="transparent"
+              onMouseEnter={() => setHovered(i)}
+            />
+          );
         })}
       </svg>
 
