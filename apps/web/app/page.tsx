@@ -75,8 +75,8 @@ export default async function TodayPage() {
   const loadByDate = new Map<string, number>();
   for (const d of analytics) loadByDate.set(d.date, d.trainingLoadDaily ?? 0);
   const history = densifyLoads(loadByDate, addDays(todayIso, -120), todayIso);
-  const fullFitness = buildFitnessSeries(history, plannedByDate, 21);
-  const fitness: FitnessPoint[] = fullFitness.slice(Math.max(0, fullFitness.length - (90 + 21)));
+  const fullFitness = buildFitnessSeries(history, plannedByDate, 28);
+  const fitness: FitnessPoint[] = fullFitness.slice(Math.max(0, fullFitness.length - (90 + 28)));
   const todayPoint = [...fitness].reverse().find((p) => !p.projected) ?? fitness[fitness.length - 1];
   const tsb = todayPoint?.tsb ?? 0;
 
