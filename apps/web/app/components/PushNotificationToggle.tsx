@@ -92,7 +92,7 @@ export function PushNotificationToggle() {
   }
 
   if (status === "denied") {
-    return <p className="lx-sans text-sm" style={{ color: "var(--ink-3)" }}>Notifications are blocked. Go to Settings → Safari → Training Ledger to allow them.</p>;
+    return <p className="lx-sans text-sm" style={{ color: "var(--ink-3)" }}>Notifications are blocked. Go to Settings → Safari → Gamman to allow them.</p>;
   }
 
   return (

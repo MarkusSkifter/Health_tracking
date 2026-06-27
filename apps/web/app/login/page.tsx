@@ -65,14 +65,14 @@ export default function LoginPage() {
 
       <div className="relative z-10 w-full max-w-sm">
         <div className="mb-10 flex items-baseline gap-2.5">
-          <span className="lx-serif" style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.01em", color: "var(--ink)" }}>Ledger</span>
+          <span className="lx-serif" style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.01em", color: "var(--ink)" }}>Gamman</span>
           <span className="lx-eyebrow">Training</span>
         </div>
 
         <h1 className="lx-serif" style={{ fontSize: "clamp(40px, 9vw, 60px)", fontWeight: 600, lineHeight: 0.95, letterSpacing: "-0.02em", color: "var(--ink)" }}>
           Sign in
         </h1>
-        <p className="lx-sans mb-8 mt-2 text-sm" style={{ color: "var(--ink-2)" }}>Your daily training ledger awaits.</p>
+        <p className="lx-sans mb-8 mt-2 text-sm" style={{ color: "var(--ink-2)" }}>Your daily training log awaits.</p>
 
         <Suspense>
           <LoginForm />

@@ -48,7 +48,7 @@ export function Masthead() {
     >
       <div className="mx-auto flex max-w-[1240px] items-center justify-between px-5 py-3.5 md:px-10">
         <div className="flex items-baseline gap-2.5">
-          <span className="lx-serif" style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.01em", color: "var(--ink)" }}>Ledger</span>
+          <span className="lx-serif" style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.01em", color: "var(--ink)" }}>Gamman</span>
           <span className="lx-eyebrow hidden sm:inline">Training</span>
         </div>
 
