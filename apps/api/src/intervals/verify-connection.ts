@@ -63,6 +63,17 @@ for (const item of activities) {
     console.log("    Full raw payload:");
     console.log(indent(JSON.stringify(item, null, 2)));
   }
+
+  // Print full raw JSON for activities that parsed but have no useful fields —
+  // these are likely from a device integration that uses different field names.
+  if (result.success) {
+    const p = result.data;
+    const isEmpty = p.type == null && p.moving_time == null && p.distance == null;
+    if (isEmpty) {
+      console.log(`    ↳ null-data activity — full raw payload:`);
+      console.log(indent(JSON.stringify(item, null, 2)));
+    }
+  }
 }
 
 console.log(`\n  Parse summary: ${parseOk} ok, ${parseFail} failed`);
