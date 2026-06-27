@@ -13,6 +13,10 @@ import { generateDailySummary } from "../summary/generate";
 import { generateWeekSuggestions } from "../summary/suggestions";
 import { isoDateInTimeZone, ATHLETE_TIMEZONE } from "../intervals/dates";
 
+// In-process cooldown so auto-ingest doesn't hammer intervals.icu on every request.
+let lastAutoIngestMs = 0;
+const AUTO_INGEST_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
+
 /** Routes that serve the frontend (SPEC §8, §9). */
 export async function registerSummaryRoutes(app: FastifyInstance): Promise<void> {
   app.post<{ Body?: { days?: number } }>("/api/ingest", async (req, reply) => {
@@ -45,8 +49,23 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
     const now = new Date();
     const y = now.getFullYear();
     const mo = String(now.getMonth() + 1).padStart(2, "0");
+    const today = now.toISOString().slice(0, 10);
     const from = req.query.from ?? `${y}-${mo}-01`;
-    const to = req.query.to ?? now.toISOString().slice(0, 10);
+    const to = req.query.to ?? today;
+
+    // Auto-ingest recent data when the range includes today so completed workouts
+    // are always visible without requiring a manual sync. Cooldown prevents
+    // hammering intervals.icu on repeated page loads.
+    if (to >= today) {
+      const nowMs = Date.now();
+      if (nowMs - lastAutoIngestMs > AUTO_INGEST_COOLDOWN_MS) {
+        lastAutoIngestMs = nowMs;
+        await ingestWindow(2).catch((err) => {
+          app.log.warn(err, "Auto-ingest failed during activities fetch");
+        });
+      }
+    }
+
     return { activities: await getActivities(from, to) };
   });
 

@@ -21,6 +21,14 @@ function plannedIntensity(w: PlannedWorkout): IntensityKey {
   return classifySession({ name: w.name, type: w.type, load: w.plannedLoad, durationSec: w.plannedDurationSec });
 }
 
+// Collapse virtual variants so "VirtualRide" matches a planned "Ride", etc.
+function canonicalType(type: string | null | undefined): string | null {
+  if (!type) return null;
+  if (type === "VirtualRun") return "Run";
+  if (type === "VirtualRide") return "Ride";
+  return type;
+}
+
 function fmtDist(meters: number | null): string {
   if (meters == null) return "";
   return `${(meters / 1000).toFixed(1)} km`;
@@ -271,7 +279,12 @@ export function CalendarGrid({
   }
   for (const w of planned) {
     const e = byDate.get(w.date) ?? { activities: [], planned: [] };
-    e.planned.push(w);
+    // If there's already a completed activity of the same sport type, the plan is
+    // fulfilled — hide it so the completed workout takes its place.
+    const fulfilled = e.activities.some(
+      (a) => canonicalType(a.type) === canonicalType(w.type),
+    );
+    if (!fulfilled) e.planned.push(w);
     byDate.set(w.date, e);
   }
 
