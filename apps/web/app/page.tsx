@@ -321,7 +321,7 @@ function goalContext(goal: TrainingGoal & { isPast: boolean }, todayIso: string)
 function LedgerEmpty({ title, message }: { title: string; message: string }) {
   return (
     <div className="ledger flex min-h-dvh flex-col items-center justify-center px-6 text-center">
-      <p className="lx-eyebrow" style={{ color: "var(--signal-ink)" }}>Training Ledger</p>
+      <p className="lx-eyebrow" style={{ color: "var(--signal-ink)" }}>Gamman</p>
       <h1 className="lx-serif mt-3" style={{ fontSize: "clamp(34px, 7vw, 56px)", fontWeight: 600, color: "var(--ink)" }}>{title}</h1>
       <p className="lx-sans mt-3 max-w-sm text-[15px]" style={{ color: "var(--ink-2)" }}>{message}</p>
     </div>

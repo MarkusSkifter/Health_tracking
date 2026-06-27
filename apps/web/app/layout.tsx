@@ -28,14 +28,14 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Training Ledger",
+  title: "Gamman",
   description: "Strain, readiness, and the shape of your fitness — a daily training ledger.",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icon.svg" },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Training Ledger",
+    title: "Gamman",
   },
 };
 

@@ -69,7 +69,7 @@ self.addEventListener("fetch", (event) => {
 // Show an incoming push notification.
 self.addEventListener("push", (event) => {
   const data = event.data?.json() ?? {};
-  const title = data.title ?? "Training Ledger";
+  const title = data.title ?? "Gamman";
   const options = {
     body: data.body ?? "",
     icon: "/icon.svg",

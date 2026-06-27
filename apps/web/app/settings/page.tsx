@@ -68,7 +68,7 @@ export default function SettingsPage() {
         </Row>
       </div>
 
-      <p className="lx-mono mt-10 text-center text-[11px]" style={{ color: "var(--ink-4)" }}>Training Ledger · v1</p>
+      <p className="lx-mono mt-10 text-center text-[11px]" style={{ color: "var(--ink-4)" }}>Gamman · v1</p>
     </LedgerShell>
   );
 }
