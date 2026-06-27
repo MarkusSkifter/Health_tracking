@@ -9,6 +9,7 @@
  *   pnpm --filter @health/api verify:intervals
  */
 import { intervalsEnv } from "../env";
+import { intervalsActivitySchema } from "./types";
 import { IntervalsClient } from "./client";
 import { ATHLETE_TIMEZONE, rollingWindow } from "./dates";
 
@@ -32,11 +33,39 @@ const [activities, wellness] = await Promise.all([
   client.getWellness(oldest, newest),
 ]);
 
-console.log(`✓ Activities: ${activities.length} record(s)`);
-if (activities.length > 0) {
-  console.log("  Most recent activity (raw):");
-  console.log(indent(JSON.stringify(activities.at(-1), null, 2)));
+console.log(`✓ Activities: ${activities.length} record(s)\n`);
+
+let parseOk = 0;
+let parseFail = 0;
+
+for (const item of activities) {
+  const raw = item as Record<string, unknown>;
+  const id = raw.id ?? "?";
+  const date = String(raw.start_date_local ?? "").slice(0, 10);
+  const type = raw.type ?? "(null)";
+
+  const result = intervalsActivitySchema.safeParse(item);
+  if (result.success) {
+    parseOk++;
+    const p = result.data;
+    console.log(
+      `  ✓ ${date}  id=${id}  type=${type}` +
+        `  move=${p.moving_time ?? "-"}s  dist=${p.distance ?? "-"}m` +
+        `  watts=${p.icu_average_watts ?? p.average_watts ?? "-"}` +
+        `  load=${p.icu_training_load ?? "-"}`,
+    );
+  } else {
+    parseFail++;
+    console.log(`  ✗ ${date}  id=${id}  type=${type}  PARSE FAILED:`);
+    for (const issue of result.error.issues) {
+      console.log(`      field="${issue.path.join(".")}"  ${issue.message}  (received: ${JSON.stringify((raw as Record<string, unknown>)[issue.path[0] as string])})`);
+    }
+    console.log("    Full raw payload:");
+    console.log(indent(JSON.stringify(item, null, 2)));
+  }
 }
+
+console.log(`\n  Parse summary: ${parseOk} ok, ${parseFail} failed`);
 
 console.log(`\n✓ Wellness: ${wellness.length} record(s)`);
 if (wellness.length > 0) {
