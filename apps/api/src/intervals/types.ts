@@ -10,16 +10,20 @@ import { z } from "zod";
  */
 
 export const intervalsActivitySchema = z.object({
-  id: z.string(),
+  // intervals.icu IDs are strings ("i…") but some integrations return plain
+  // integers — coerce so either form is accepted.
+  id: z.coerce.string(),
   start_date_local: z.string(),
   type: z.string().nullish(),
-  moving_time: z.number().nullish(),
-  elapsed_time: z.number().nullish(),
-  distance: z.number().nullish(),
-  icu_average_watts: z.number().nullish(),
-  average_watts: z.number().nullish(),
-  average_heartrate: z.number().nullish(),
-  icu_training_load: z.number().nullish(),
+  // Numeric fields: coerce from string just in case an integration serialises
+  // them as quoted numbers (e.g. "155" instead of 155).
+  moving_time: z.coerce.number().nullish(),
+  elapsed_time: z.coerce.number().nullish(),
+  distance: z.coerce.number().nullish(),
+  icu_average_watts: z.coerce.number().nullish(),
+  average_watts: z.coerce.number().nullish(),
+  average_heartrate: z.coerce.number().nullish(),
+  icu_training_load: z.coerce.number().nullish(),
 });
 
 export const intervalsWellnessSchema = z.object({

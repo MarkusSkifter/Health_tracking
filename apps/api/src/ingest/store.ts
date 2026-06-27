@@ -47,7 +47,16 @@ export async function storeActivities(
 ): Promise<number> {
   let stored = 0;
   for (const item of rawActivities) {
-    const parsed = intervalsActivitySchema.parse(item);
+    let parsed: ReturnType<typeof intervalsActivitySchema.parse>;
+    try {
+      parsed = intervalsActivitySchema.parse(item);
+    } catch (err) {
+      // A single malformed payload (e.g. unexpected field type from a device
+      // integration) must not abort the whole batch — log and skip.
+      const id = (item as Record<string, unknown>)?.id ?? "unknown";
+      console.warn(`[ingest] skipping activity id=${id}: ${err}`);
+      continue;
+    }
 
     // intervals.icu returns calendar notes/placeholders on the activities feed:
     // no sport type and no recorded effort. Skip them so they don't show up as

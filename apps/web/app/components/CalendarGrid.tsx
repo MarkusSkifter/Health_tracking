@@ -21,11 +21,13 @@ function plannedIntensity(w: PlannedWorkout): IntensityKey {
   return classifySession({ name: w.name, type: w.type, load: w.plannedLoad, durationSec: w.plannedDurationSec });
 }
 
-// Collapse virtual variants so "VirtualRide" matches a planned "Ride", etc.
+// Collapse sport-type variants so completed activities match their planned
+// counterparts regardless of sub-type (e.g. GravelRide → Ride, TrailRun → Run).
 function canonicalType(type: string | null | undefined): string | null {
   if (!type) return null;
-  if (type === "VirtualRun") return "Run";
-  if (type === "VirtualRide") return "Ride";
+  if (["Run", "VirtualRun", "TrailRun", "Treadmill"].includes(type)) return "Run";
+  if (["Ride", "VirtualRide", "GravelRide", "MountainBikeRide", "EBikeRide", "EMountainBikeRide", "Cycling"].includes(type)) return "Ride";
+  if (["Swim", "OpenWaterSwim"].includes(type)) return "Swim";
   return type;
 }
 
