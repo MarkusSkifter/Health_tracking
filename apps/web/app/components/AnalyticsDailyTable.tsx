@@ -3,6 +3,7 @@
 import type { Activity, AnalyticsDay } from "@health/shared";
 import { Fragment, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { ActivityStreams } from "./ActivityStreams";
 import { classifySession, intensity } from "./ledger/shared";
 
 function shortDate(iso: string): string {
@@ -84,6 +85,7 @@ function Th({ label, tip }: { label: string; tip?: string }) {
 }
 
 function ActivityRow({ activity: a }: { activity: Activity }) {
+  const [open, setOpen] = useState(false);
   const meta = intensity(classifySession({ name: a.type, type: a.type, load: a.trainingLoad, durationSec: a.durationSec }));
   const metrics: Array<{ label: string; value: string }> = [];
   if (a.avgPower !== null) metrics.push({ label: "Avg power", value: `${a.avgPower} W` });
@@ -92,18 +94,28 @@ function ActivityRow({ activity: a }: { activity: Activity }) {
   if (a.distanceM !== null) metrics.push({ label: "Distance", value: formatDistance(a.distanceM) });
 
   return (
-    <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 py-0.5">
-      <span className="flex items-center gap-1.5">
-        <span style={{ width: 7, height: 7, borderRadius: "50%", background: `var(${meta.varName})` }} />
-        <span className="lx-sans text-xs font-medium" style={{ color: "var(--ink)" }}>{formatActivityType(a.type)}</span>
-      </span>
-      <span className="lx-num text-xs" style={{ color: "var(--ink-3)" }}>{formatDuration(a.durationSec)}</span>
-      {metrics.map((m) => (
-        <span key={m.label} className="text-xs">
-          <span className="lx-eyebrow" style={{ color: "var(--ink-4)" }}>{m.label} </span>
-          <span className="lx-num" style={{ color: "var(--ink-2)" }}>{m.value}</span>
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full flex-wrap items-baseline gap-x-5 gap-y-1 py-0.5 text-left"
+        style={{ cursor: "pointer" }}
+        aria-expanded={open}
+      >
+        <span className="flex items-center gap-1.5">
+          <span className="text-[9px]" style={{ color: "var(--ink-4)" }}>{open ? "▾" : "▸"}</span>
+          <span style={{ width: 7, height: 7, borderRadius: "50%", background: `var(${meta.varName})` }} />
+          <span className="lx-sans text-xs font-medium" style={{ color: "var(--ink)" }}>{formatActivityType(a.type)}</span>
         </span>
-      ))}
+        <span className="lx-num text-xs" style={{ color: "var(--ink-3)" }}>{formatDuration(a.durationSec)}</span>
+        {metrics.map((m) => (
+          <span key={m.label} className="text-xs">
+            <span className="lx-eyebrow" style={{ color: "var(--ink-4)" }}>{m.label} </span>
+            <span className="lx-num" style={{ color: "var(--ink-2)" }}>{m.value}</span>
+          </span>
+        ))}
+      </button>
+      {open && <ActivityStreams activityId={a.intervalsActivityId} />}
     </div>
   );
 }

@@ -72,6 +72,16 @@ export class IntervalsClient {
     });
   }
 
+  /**
+   * Time-series streams for a single activity (watts, heartrate, cadence, …).
+   * Activity-scoped (not athlete-scoped). Returns the raw intervals.icu shape:
+   * an array of `{ type, data: [...] }` channels, index-aligned at ~1 Hz.
+   */
+  getStreams(activityId: string, types?: string[]): Promise<unknown[]> {
+    const params = types && types.length > 0 ? { types: types.join(",") } : {};
+    return this.get<unknown[]>(`/api/v1/activity/${activityId}/streams`, params);
+  }
+
   /** Delete a calendar event by its intervals.icu numeric id. */
   async deleteEvent(eventId: number): Promise<void> {
     const url = new URL(`${this.baseUrl}/api/v1/athlete/${this.athleteId}/events/${eventId}`);

@@ -1,4 +1,4 @@
-﻿import type { Activity, AiWeekPlan, AnalyticsDay, AthleteProfile, DailySummary, PlannedWorkout, TodayResponse, TrainingGoal } from "@health/shared";
+﻿import type { Activity, ActivityStreams, AiWeekPlan, AnalyticsDay, AthleteProfile, DailySummary, PlannedWorkout, TodayResponse, TrainingGoal } from "@health/shared";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
 
@@ -24,6 +24,12 @@ export async function fetchActivities(from: string, to: string): Promise<Activit
   if (!res.ok) throw new Error(`Failed to load activities (${res.status})`);
   const data = (await res.json()) as { activities: Activity[] };
   return data.activities;
+}
+
+export async function fetchActivityStreams(id: string): Promise<ActivityStreams> {
+  const res = await fetch(`${API_BASE}/api/activities/${id}/streams`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Failed to load streams (${res.status})`);
+  return (await res.json()) as ActivityStreams;
 }
 
 export async function fetchUpcoming(): Promise<{ workouts: PlannedWorkout[]; suggestions: AiWeekPlan | null }> {
