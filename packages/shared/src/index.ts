@@ -106,6 +106,32 @@ export interface PlannedWorkout {
   description: string | null;
 }
 
+/**
+ * Downsampled per-activity time-series streams (intervals.icu `/streams`).
+ * Each present channel is an array of equal length, index-aligned: bucket `i`
+ * across every channel covers the same slice of the activity. Channels absent
+ * from the recording are omitted entirely.
+ */
+export interface ActivityStreams {
+  intervalsActivityId: string;
+  /** Activity duration in seconds (from the source `time`/`distance` stream). */
+  durationSec: number | null;
+  /** Number of buckets — the length of every channel array below. */
+  samples: number;
+  /** Seconds from start at the centre of each bucket (length === samples). */
+  t: number[];
+  /** Power, watts. */
+  watts?: number[];
+  /** Heart rate, bpm. */
+  heartrate?: number[];
+  /** Cadence, rpm/spm. */
+  cadence?: number[];
+  /** Elevation, metres. */
+  altitude?: number[];
+  /** Speed, metres per second (from `velocity_smooth`). */
+  velocity?: number[];
+}
+
 /** User-configurable training thresholds. */
 export interface UserSettings {
   ftpWatts: number | null;

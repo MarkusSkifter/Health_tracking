@@ -2,6 +2,7 @@ import cors from "@fastify/cors";
 import Fastify, { type FastifyInstance } from "fastify";
 import { registerCorosRoutes } from "./routes/coros";
 import { registerPushRoutes } from "./routes/push";
+import { registerStreamRoutes } from "./routes/streams";
 import { registerSummaryRoutes } from "./routes/summaries";
 
 /**
@@ -22,6 +23,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   }));
 
   await registerSummaryRoutes(app);
+  await registerStreamRoutes(app);
   await registerPushRoutes(app);
   await registerCorosRoutes(app);
 
