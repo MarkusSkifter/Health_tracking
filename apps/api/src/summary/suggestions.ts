@@ -92,6 +92,71 @@ function periodizationPhase(weeksToGoal: number): { phase: string; acrTarget: st
   };
 }
 
+type SportFocus = "run" | "ride" | "swim" | "tri" | "general";
+
+function deriveSportFocus(eventType: string | null): SportFocus {
+  const t = (eventType ?? "").toLowerCase();
+  if (t.includes("run") || t.includes("marathon") || t.includes("half")) return "run";
+  if (t.includes("ride") || t.includes("cycl") || t.includes("bike")) return "ride";
+  if (t.includes("swim")) return "swim";
+  if (t.includes("tri")) return "tri";
+  return "general";
+}
+
+function sportFocusSection(focus: SportFocus, runThresholdSec: number | null): string {
+  if (focus === "run") {
+    const thresholdLine = runThresholdSec
+      ? `Run threshold pace: ${Math.floor(runThresholdSec / 60)}:${String(runThresholdSec % 60).padStart(2, "0")}/km — use this as the anchor for all pace targets.\n`
+      : "";
+    return (
+      `Sport focus: RUNNING. The primary goal is a running event — the plan must be run-dominated.\n` +
+      thresholdLine +
+      `Allowed run session types: Easy Run, Long Run, Tempo Run, Track/Interval Session, Fartlek, Strides.\n` +
+      `Cross-training (Ride/Swim) may appear at most once per week as active recovery only — never replacing a run session.\n` +
+      `Run intensity zones relative to threshold pace: Z1 easy (<75%), Z2 aerobic (75-85%), Z3 tempo (86-95%), Z4 threshold (96-105%), Z5 VO2max (>105%).\n`
+    );
+  }
+  if (focus === "ride") {
+    return `Sport focus: CYCLING. Plan predominantly cycling sessions. Use FTP zones for intensity.\n`;
+  }
+  if (focus === "swim") {
+    return `Sport focus: SWIMMING. Plan predominantly swim sessions.\n`;
+  }
+  if (focus === "tri") {
+    return `Sport focus: TRIATHLON. Balance swim, bike, and run sessions across the week.\n`;
+  }
+  return "";
+}
+
+function sessionDistributionSection(trainingDays: number | null, weeklyHours: number | null): string {
+  if (!trainingDays && !weeklyHours) return "";
+  const parts: string[] = [];
+  if (trainingDays) parts.push(`${trainingDays} training sessions per week — the remaining ${7 - trainingDays} days must be Rest`);
+  if (weeklyHours) {
+    const avgMin = trainingDays ? Math.round((weeklyHours * 60) / trainingDays) : null;
+    parts.push(`~${weeklyHours}h total weekly time${avgMin ? ` (~${avgMin} min average per session)` : ""}`);
+  }
+  return `Athlete availability: ${parts.join(", ")}.\n`;
+}
+
+function descriptionFormatRules(focus: SportFocus, runThresholdSec: number | null): string {
+  if (focus === "run") {
+    const thresholdStr = runThresholdSec
+      ? `${Math.floor(runThresholdSec / 60)}:${String(runThresholdSec % 60).padStart(2, "0")}/km`
+      : "threshold pace";
+    return (
+      `- description: include workout steps ONLY for quality/hard run sessions. Write in plain English with pace targets (e.g. "@ ${thresholdStr}") or effort labels (easy, tempo, threshold). ` +
+      `Format: warm-up, main set, cool-down. Example: '15m easy → 6×1km @ ${thresholdStr} with 90s jog recovery → 10m easy'. Omit description for easy/rest sessions.`
+    );
+  }
+  return (
+    `- description: include workout steps (intervals.icu format) ONLY for quality/hard sessions. ` +
+    `Use 'Nx' on its own line for repeat blocks, then '- Nm X-Y%' for each step inside the block. ` +
+    `Intensity as % of FTP: Z1=50-60%, Z2=60-75%, Z3=76-90%, Z4=91-105%, Z5=106%+. ` +
+    `Duration as Nm (minutes) or Ns (seconds). Example: '- 15m 50-60%\\n4x\\n- 8m 91-105%\\n- 3m 50%\\n- 15m 50%'. Omit description for easy/rest sessions.`
+  );
+}
+
 export async function generateWeekSuggestions(): Promise<AiWeekPlan> {
   const today = isoDateInTimeZone(new Date(), ATHLETE_TIMEZONE);
   let tsb = 0;
@@ -129,6 +194,7 @@ export async function generateWeekSuggestions(): Promise<AiWeekPlan> {
     const runThresholdSec = cfg?.runThresholdSec ?? null;
     const profile = profileRows[0];
     const nextGoal = goalRows[0] ?? null;
+    const focus = deriveSportFocus(nextGoal?.eventType ?? null);
 
     const dates = Array.from({ length: PLAN_DAYS }, (_, i) => addDays(today, i));
 
@@ -187,10 +253,7 @@ export async function generateWeekSuggestions(): Promise<AiWeekPlan> {
     // Athlete profile context
     let profileSection = "";
     if (profile?.bio) profileSection += `Athlete profile: ${profile.bio}\n`;
-    if (profile?.weeklyTrainingHours) profileSection += `Typical training: ${profile.weeklyTrainingHours}h/week`;
-    if (profile?.trainingDaysPerWeek) profileSection += `, ${profile.trainingDaysPerWeek} days/week`;
-    if (profileSection.endsWith(", ")) profileSection = profileSection.slice(0, -2);
-    if (profile?.weeklyTrainingHours || profile?.trainingDaysPerWeek) profileSection += "\n";
+    profileSection += sessionDistributionSection(profile?.trainingDaysPerWeek ?? null, profile?.weeklyTrainingHours ?? null);
 
     const systemPrompt =
       "You are an expert endurance coach. Return ONLY valid JSON — no markdown, no code fences, no explanation.";
@@ -198,6 +261,7 @@ export async function generateWeekSuggestions(): Promise<AiWeekPlan> {
     const userPrompt =
       `Generate a ${PLAN_DAYS}-day (4-week) training plan.\n\n` +
       profileSection +
+      sportFocusSection(focus, runThresholdSec) +
       (s ? (
         "Fitness (as of " + s.date + "): CTL=" + Math.round(s.load28d) +
         " ATL=" + Math.round(s.load7d) +
@@ -205,7 +269,7 @@ export async function generateWeekSuggestions(): Promise<AiWeekPlan> {
         " ACR=" + s.acuteChronicRatio.toFixed(2) + "\n"
       ) : "") +
       (ftpWatts ? "Cycling FTP: " + ftpWatts + "W\n" : "") +
-      (runThresholdSec ? "Run threshold pace: " + Math.floor(runThresholdSec / 60) + ":" + String(runThresholdSec % 60).padStart(2, "0") + "/km\n" : "") +
+      (runThresholdSec && focus !== "run" ? "Run threshold pace: " + Math.floor(runThresholdSec / 60) + ":" + String(runThresholdSec % 60).padStart(2, "0") + "/km\n" : "") +
       (hrvLines ? "HRV trend: " + hrvLines + "\n" : "") +
       (actLines ? "Recent sessions: " + actLines + "\n" : "") +
       ctlSection +
@@ -214,15 +278,14 @@ export async function generateWeekSuggestions(): Promise<AiWeekPlan> {
       "Schema: {\"overview\":\"4-week block description\",\"days\":[{\"date\":\"YYYY-MM-DD\",\"name\":\"...\",\"type\":\"Run|Ride|Swim|WeightTraining|Rest\",\"plannedDurationSec\":3600,\"plannedLoad\":65,\"rationale\":\"one sentence coach note\",\"description\":\"optional workout steps for quality sessions only\"}]}\n\n" +
       "Rules:\n" +
       "- Rest => plannedDurationSec=null plannedLoad=0, omit description.\n" +
+      (profile?.trainingDaysPerWeek ? `- CRITICAL: plan exactly ${profile.trainingDaysPerWeek} non-Rest sessions per week. The other ${7 - profile.trainingDaysPerWeek} days must be Rest.\n` : "") +
+      (focus === "run" ? "- CRITICAL: session types must be predominantly Run. At most one Ride/Swim per week as active recovery, never replacing a run.\n" : "") +
       "- Alternate hard/easy. Easy load 20-45, moderate 45-70, hard 70-120.\n" +
       "- If fatigued or ACR>1.3 on entry: start with recovery, then build from week 2.\n" +
       "- CRITICAL: total weekly load must meet or exceed the CTL growth targets above. A week where fitness declines is a failed week unless it is the scheduled recovery week (week 4).\n" +
       "- 3:1 periodization: weeks 1-3 progressively increase load, week 4 reduces by ~20%.\n" +
       "- overview: describe the full 4-week block arc, not just week 1.\n" +
-      "- description: include workout steps (intervals.icu format) ONLY for quality/hard sessions. " +
-      "Use 'Nx' on its own line for repeat blocks, then '- Nm X-Y%' for each step inside the block. " +
-      "Intensity as % of FTP: Z1=50-60%, Z2=60-75%, Z3=76-90%, Z4=91-105%, Z5=106%+. " +
-      "Duration as Nm (minutes) or Ns (seconds). Example: '- 15m 50-60%\\n4x\\n- 8m 91-105%\\n- 3m 50%\\n- 15m 50%'. Omit description for easy/rest sessions.";
+      descriptionFormatRules(focus, runThresholdSec);
 
     const { ANTHROPIC_API_KEY } = anthropicEnv();
     const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
