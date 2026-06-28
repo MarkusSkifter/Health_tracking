@@ -30,13 +30,12 @@ const LEGEND: Array<{ key: IntensityKey; label: string }> = [
 
 export default async function CalendarPage({ searchParams }: { searchParams: SearchParams }) {
   const { month: mp } = await searchParams;
-  const now = new Date();
-  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const thisMonth = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Copenhagen", year: "numeric", month: "2-digit" }).format(new Date()).slice(0, 7);
   const month = mp ?? thisMonth;
 
   const [y, mo] = month.split("-").map(Number);
-  const year = y ?? now.getFullYear();
-  const monthNum = mo ?? now.getMonth() + 1;
+  const year = y ?? new Date().getFullYear();
+  const monthNum = mo ?? (new Date().getMonth() + 1);
   const from = `${month}-01`;
   const lastDay = new Date(year, monthNum, 0).getDate();
   const to = `${month}-${String(lastDay).padStart(2, "0")}`;

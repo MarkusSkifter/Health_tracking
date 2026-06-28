@@ -10,7 +10,7 @@ import type { MacroWeek } from "./components/ledger/Macrocycle";
 export const revalidate = 60;
 
 function iso(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Copenhagen", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 }
 function addDays(isoDate: string, n: number): string {
   const d = new Date(`${isoDate}T00:00:00`);

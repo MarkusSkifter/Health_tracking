@@ -59,7 +59,7 @@ function Th({ label, tip }: { label: string; tip?: string }) {
           {visible && typeof document !== "undefined" &&
             createPortal(
               <div
-                className="lx-sans pointer-events-none fixed z-50 w-56 px-3.5 py-2.5 text-left text-[11px] font-normal normal-case leading-relaxed"
+                className="ledger lx-sans pointer-events-none fixed z-50 w-56 px-3.5 py-2.5 text-left text-[11px] font-normal normal-case leading-relaxed"
                 style={{
                   left: coords.x,
                   top: coords.y - 8,
