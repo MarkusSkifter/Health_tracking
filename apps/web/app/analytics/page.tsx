@@ -33,13 +33,12 @@ function Rule({ label, aside }: { label: string; aside?: string }) {
 
 export default async function AnalyticsPage({ searchParams }: { searchParams: SearchParams }) {
   const { month: mp } = await searchParams;
-  const now = new Date();
-  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const thisMonth = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Copenhagen", year: "numeric", month: "2-digit" }).format(new Date()).slice(0, 7);
   const month = mp ?? thisMonth;
 
   const [y, m] = month.split("-").map(Number);
-  const year = y ?? now.getFullYear();
-  const mo = m ?? now.getMonth() + 1;
+  const year = y ?? new Date().getFullYear();
+  const mo = m ?? (new Date().getMonth() + 1);
   const from = `${month}-01`;
   const lastDay = new Date(year, mo, 0).getDate();
   const to = `${month}-${String(lastDay).padStart(2, "0")}`;

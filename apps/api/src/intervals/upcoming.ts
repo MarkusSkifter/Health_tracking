@@ -2,11 +2,12 @@ import type { PlannedWorkout } from "@health/shared";
 import { intervalsEnv } from "../env";
 import { IntervalsClient } from "./client";
 import { intervalsEventSchema } from "./types";
+import { isoDateInTimeZone, ATHLETE_TIMEZONE } from "./dates";
 
 const SKIP_CATEGORIES = new Set(["NOTE", "HOLIDAY", "TARGET"]);
 
 function isoToday(): string {
-  return new Date().toISOString().slice(0, 10);
+  return isoDateInTimeZone(new Date(), ATHLETE_TIMEZONE);
 }
 
 function addDays(date: string, n: number): string {

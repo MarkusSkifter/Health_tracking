@@ -34,6 +34,15 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
     }
   });
   app.get("/api/today", async (_req, reply) => {
+    const todayDate = isoDateInTimeZone(new Date(), ATHLETE_TIMEZONE);
+    // Proactively generate today's summary if it hasn't been written yet
+    // (e.g. first page load of the day before the cron job fires).
+    const existing = await getToday();
+    if (!existing || existing.summary.date < todayDate) {
+      await generateDailySummary().catch((err) => {
+        app.log.warn(err, "On-demand summary generation failed");
+      });
+    }
     const today = await getToday();
     if (!today) {
       return reply.code(404).send({ error: "No summaries yet — run the daily job." });
@@ -47,9 +56,8 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
 
   app.get<{ Querystring: { from?: string; to?: string } }>("/api/activities", async (req) => {
     const now = new Date();
-    const y = now.getFullYear();
-    const mo = String(now.getMonth() + 1).padStart(2, "0");
-    const today = now.toISOString().slice(0, 10);
+    const today = isoDateInTimeZone(now, ATHLETE_TIMEZONE);
+    const [y, mo] = today.split("-");
     const from = req.query.from ?? `${y}-${mo}-01`;
     const to = req.query.to ?? today;
 
@@ -71,10 +79,10 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
 
   app.get<{ Querystring: { from?: string; to?: string } }>("/api/analytics", async (req) => {
     const now = new Date();
-    const y = now.getFullYear();
-    const mo = String(now.getMonth() + 1).padStart(2, "0");
+    const today = isoDateInTimeZone(now, ATHLETE_TIMEZONE);
+    const [y, mo] = today.split("-");
     const from = req.query.from ?? `${y}-${mo}-01`;
-    const to = req.query.to ?? now.toISOString().slice(0, 10);
+    const to = req.query.to ?? today;
     const days = await getAnalytics(from, to);
     return { days, from, to };
   });
@@ -94,10 +102,11 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
   app.get<{ Querystring: { from?: string; to?: string } }>("/api/events", async (req, reply) => {
     try {
       const now = new Date();
-      const y = now.getFullYear();
-      const mo = String(now.getMonth() + 1).padStart(2, "0");
+      const today = isoDateInTimeZone(now, ATHLETE_TIMEZONE);
+      const [y, mo] = today.split("-");
+      const lastDay = new Date(Number(y), Number(mo), 0).getDate();
       const from = req.query.from ?? `${y}-${mo}-01`;
-      const to = req.query.to ?? `${y}-${mo}-${new Date(y, now.getMonth() + 1, 0).getDate()}`;
+      const to = req.query.to ?? `${y}-${mo}-${lastDay}`;
       const { INTERVALS_API_KEY, INTERVALS_ATHLETE_ID } = intervalsEnv();
       const client = new IntervalsClient({ apiKey: INTERVALS_API_KEY, athleteId: INTERVALS_ATHLETE_ID });
       const { intervalsEventSchema } = await import("../intervals/types");
