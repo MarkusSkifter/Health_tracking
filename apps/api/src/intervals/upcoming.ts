@@ -3,17 +3,12 @@ import { intervalsEnv } from "../env";
 import { IntervalsClient } from "./client";
 import { intervalsEventSchema } from "./types";
 import { isoDateInTimeZone, ATHLETE_TIMEZONE } from "./dates";
+import { addDays } from "../metrics/load";
 
 const SKIP_CATEGORIES = new Set(["NOTE", "HOLIDAY", "TARGET"]);
 
 function isoToday(): string {
   return isoDateInTimeZone(new Date(), ATHLETE_TIMEZONE);
-}
-
-function addDays(date: string, n: number): string {
-  const d = new Date(`${date}T00:00:00`);
-  d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
 }
 
 export async function fetchUpcomingWorkouts(days = 7): Promise<PlannedWorkout[]> {

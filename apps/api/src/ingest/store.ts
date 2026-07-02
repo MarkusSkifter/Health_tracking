@@ -102,8 +102,17 @@ export async function storeWellness(
   userId: number,
   rawWellness: unknown[],
 ): Promise<number> {
+  let stored = 0;
   for (const item of rawWellness) {
-    const parsed = intervalsWellnessSchema.parse(item);
+    let parsed: ReturnType<typeof intervalsWellnessSchema.parse>;
+    try {
+      parsed = intervalsWellnessSchema.parse(item);
+    } catch (err) {
+      // A single malformed payload must not abort the whole batch — log and skip.
+      const id = (item as Record<string, unknown>)?.id ?? "unknown";
+      console.warn(`[ingest] skipping wellness id=${id}: ${err}`);
+      continue;
+    }
     const json = item as Record<string, unknown>;
 
     await db
@@ -128,6 +137,7 @@ export async function storeWellness(
           weightKg: norm.weightKg,
         },
       });
+    stored++;
   }
-  return rawWellness.length;
+  return stored;
 }

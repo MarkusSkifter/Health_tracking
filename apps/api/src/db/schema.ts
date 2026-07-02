@@ -198,14 +198,9 @@ export const trainingGoals = pgTable(
   (t) => [index().on(t.userId, t.targetDate)],
 );
 
-export type CorosWorkoutRow = typeof corosWorkouts.$inferSelect;
-export type NewCorosWorkout = typeof corosWorkouts.$inferInsert;
-
 // Row-type helpers for use across the API.
-export type UserRow = typeof users.$inferSelect;
 export type ActivityRow = typeof activities.$inferSelect;
 export type WellnessRow = typeof wellness.$inferSelect;
 export type DailySummaryRow = typeof dailySummary.$inferSelect;
 export type NewActivity = typeof activities.$inferInsert;
 export type NewWellness = typeof wellness.$inferInsert;
-export type NewDailySummary = typeof dailySummary.$inferInsert;

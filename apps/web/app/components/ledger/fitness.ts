@@ -20,9 +20,11 @@ export interface FitnessPoint {
 const CTL_TAU = 42;
 const ATL_TAU = 7;
 
+// Calendar-date math in UTC throughout — parsing local midnight and
+// serializing via toISOString() shifts the date back a day on UTC+ servers.
 function addDays(iso: string, n: number): string {
-  const d = new Date(`${iso}T00:00:00`);
-  d.setDate(d.getDate() + n);
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
 }
 

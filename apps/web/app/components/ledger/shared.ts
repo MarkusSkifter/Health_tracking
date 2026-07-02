@@ -51,8 +51,10 @@ export function classifySession(opts: {
 
 export function fmtDuration(sec: number | null | undefined): string | null {
   if (sec == null || sec <= 0) return null;
-  const h = Math.floor(sec / 3600);
-  const m = Math.round((sec % 3600) / 60);
+  // Round to whole minutes first so e.g. 7170s renders "2h 00m", never "1h 60m".
+  const totalMin = Math.round(sec / 60);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
   return h > 0 ? `${h}h ${m.toString().padStart(2, "0")}m` : `${m}m`;
 }
 

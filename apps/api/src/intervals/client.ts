@@ -78,7 +78,8 @@ export class IntervalsClient {
    * an array of `{ type, data: [...] }` channels, index-aligned at ~1 Hz.
    */
   getStreams(activityId: string, types?: string[]): Promise<unknown[]> {
-    const params = types && types.length > 0 ? { types: types.join(",") } : {};
+    const params: Record<string, string> =
+      types && types.length > 0 ? { types: types.join(",") } : {};
     return this.get<unknown[]>(`/api/v1/activity/${activityId}/streams`, params);
   }
 

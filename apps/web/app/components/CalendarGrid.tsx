@@ -271,7 +271,15 @@ export function CalendarGrid({
   planned: PlannedWorkout[];
 }) {
   const [selected, setSelected] = useState<string | null>(null);
-  const today = new Date().toISOString().slice(0, 10);
+  // Athlete-local "today" — toISOString() would give the UTC date, which lags
+  // Copenhagen by 1-2 hours around midnight (and can mismatch between SSR and
+  // hydration).
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Copenhagen",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 
   const byDate = new Map<string, { activities: Activity[]; planned: PlannedWorkout[] }>();
   for (const a of activities) {

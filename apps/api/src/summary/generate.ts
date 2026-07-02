@@ -35,7 +35,9 @@ export async function generateDailySummary(
   const existing = await db.query.dailySummary.findFirst({
     where: and(eq(dailySummary.userId, userId), eq(dailySummary.date, date)),
   });
-  if (existing && !opts.force) {
+  // An empty aiSummaryText means a previous run wrote the metrics but the
+  // Claude call failed — treat that as "not generated yet" so it gets retried.
+  if (existing && existing.aiSummaryText !== "" && !opts.force) {
     return { date, aiSummaryText: existing.aiSummaryText, skipped: true };
   }
 

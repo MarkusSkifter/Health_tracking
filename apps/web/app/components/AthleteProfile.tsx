@@ -12,11 +12,13 @@ export function AthleteProfile() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    fetchProfile().then((p) => {
-      setBio(p.bio ?? "");
-      setWeeklyHours(p.weeklyTrainingHours != null ? String(p.weeklyTrainingHours) : "");
-      setDaysPerWeek(p.trainingDaysPerWeek != null ? String(p.trainingDaysPerWeek) : "");
-    });
+    fetchProfile()
+      .then((p) => {
+        setBio(p.bio ?? "");
+        setWeeklyHours(p.weeklyTrainingHours != null ? String(p.weeklyTrainingHours) : "");
+        setDaysPerWeek(p.trainingDaysPerWeek != null ? String(p.trainingDaysPerWeek) : "");
+      })
+      .catch(() => setStatus("error"));
   }, []);
 
   async function handleSave() {

@@ -7,8 +7,6 @@ import type { VitalTile } from "./components/ledger/VitalsMatrix";
 import type { RibbonDay } from "./components/ledger/WeekRibbon";
 import type { MacroWeek } from "./components/ledger/Macrocycle";
 
-export const revalidate = 60;
-
 function iso(d: Date): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Copenhagen", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 }

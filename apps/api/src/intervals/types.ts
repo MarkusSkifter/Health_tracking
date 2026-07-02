@@ -49,7 +49,3 @@ export const intervalsEventSchema = z.object({
   category: z.string().nullish(),
   plan_id: z.number().nullish(),
 });
-
-export type IntervalsActivity = z.infer<typeof intervalsActivitySchema>;
-export type IntervalsWellness = z.infer<typeof intervalsWellnessSchema>;
-export type IntervalsEvent = z.infer<typeof intervalsEventSchema>;

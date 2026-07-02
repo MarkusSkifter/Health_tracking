@@ -29,7 +29,10 @@ export function TrainingGoals() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchGoals().then((g) => { setGoals(g); setLoading(false); });
+    fetchGoals()
+      .then((g) => setGoals(g))
+      .catch(() => setError("Could not load goals."))
+      .finally(() => setLoading(false));
   }, []);
 
   async function handleAdd() {

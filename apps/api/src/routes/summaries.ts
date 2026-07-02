@@ -1,6 +1,6 @@
 ﻿import type { AiDaySuggestion } from "@health/shared";
 import type { FastifyInstance } from "fastify";
-import { asc, eq, gte } from "drizzle-orm";
+import { and, asc, eq, gte } from "drizzle-orm";
 import { ingestWindow } from "../ingest/ingest";
 import { IntervalsClient } from "../intervals/client";
 import { fetchUpcomingWorkouts } from "../intervals/upcoming";
@@ -272,7 +272,7 @@ export async function registerSummaryRoutes(app: FastifyInstance): Promise<void>
   app.delete<{ Params: { id: string } }>("/api/goals/:id", async (req, reply) => {
     try {
       const userId = await getOrCreateUserId();
-      await db.delete(trainingGoals).where(eq(trainingGoals.id, req.params.id));
+      await db.delete(trainingGoals).where(and(eq(trainingGoals.userId, userId), eq(trainingGoals.id, req.params.id)));
       return { ok: true };
     } catch (err) {
       app.log.error(err, "Failed to delete goal");

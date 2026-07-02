@@ -5,8 +5,6 @@ import { AnalyticsCharts } from "../components/AnalyticsCharts";
 import { AnalyticsDailyTable } from "../components/AnalyticsDailyTable";
 import { LedgerShell } from "../components/ledger/LedgerShell";
 
-export const revalidate = 60;
-
 type SearchParams = Promise<{ month?: string }>;
 
 function shiftMonth(ym: string, delta: number): string {
@@ -34,11 +32,12 @@ function Rule({ label, aside }: { label: string; aside?: string }) {
 export default async function AnalyticsPage({ searchParams }: { searchParams: SearchParams }) {
   const { month: mp } = await searchParams;
   const thisMonth = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Copenhagen", year: "numeric", month: "2-digit" }).format(new Date()).slice(0, 7);
-  const month = mp ?? thisMonth;
+  // A malformed ?month= would flow into new Date() and crash Intl formatting.
+  const month = mp && /^\d{4}-(0[1-9]|1[0-2])$/.test(mp) ? mp : thisMonth;
 
   const [y, m] = month.split("-").map(Number);
-  const year = y ?? new Date().getFullYear();
-  const mo = m ?? (new Date().getMonth() + 1);
+  const year = y!;
+  const mo = m!;
   const from = `${month}-01`;
   const lastDay = new Date(year, mo, 0).getDate();
   const to = `${month}-${String(lastDay).padStart(2, "0")}`;

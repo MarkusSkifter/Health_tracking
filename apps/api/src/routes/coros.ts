@@ -21,7 +21,7 @@ interface CorosWorkoutPayload {
   [key: string]: unknown;
 }
 
-interface CороsWebhookBody {
+interface CorosWebhookBody {
   userId?: string;
   dataList?: CorosWorkoutPayload[];
 }
@@ -38,7 +38,7 @@ export async function registerCorosRoutes(app: FastifyInstance): Promise<void> {
     return;
   }
 
-  app.post<{ Body: CороsWebhookBody }>("/api/coros/webhook", async (req, reply) => {
+  app.post<{ Body: CorosWebhookBody }>("/api/coros/webhook", async (req, reply) => {
     const incomingClient = req.headers["client"];
     const incomingSecret = req.headers["secret"];
 
