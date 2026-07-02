@@ -22,5 +22,8 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // PWA assets (service worker, manifest, icons) are fetched without
+  // credentials by the browser — redirecting them to /login breaks the
+  // iOS Home-Screen install flow.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icon.svg|icons/).*)"],
 };

@@ -134,27 +134,30 @@ export async function getAnalytics(from: string, to: string): Promise<AnalyticsD
         SELECT 1 FROM wellness w WHERE w.user_id = ${userId} AND w.date = act.date
       )
     )
-    -- Fill missing rolling averages with window functions over the extended range
+    -- Fill missing rolling metrics with window functions over the extended range.
+    -- Stored load_7d/load_28d are trailing SUMS over calendar days, so the
+    -- fallback must be SUM over a calendar-day RANGE window (a ROWS window
+    -- would stretch across missing days and an AVG would be off by 7x/28x).
     SELECT
       dt::text                                                         AS date,
       daily_load                                                       AS "trainingLoadDaily",
       COALESCE(load_7d,
-        ROUND(AVG(COALESCE(daily_load, 0))
-          OVER (ORDER BY dt ROWS BETWEEN 6 PRECEDING AND CURRENT ROW))
+        SUM(COALESCE(daily_load, 0))
+          OVER (ORDER BY dt RANGE BETWEEN INTERVAL '6 days' PRECEDING AND CURRENT ROW)
       )                                                                AS "load7d",
       COALESCE(load_28d,
-        ROUND(AVG(COALESCE(daily_load, 0))
-          OVER (ORDER BY dt ROWS BETWEEN 27 PRECEDING AND CURRENT ROW))
+        SUM(COALESCE(daily_load, 0))
+          OVER (ORDER BY dt RANGE BETWEEN INTERVAL '27 days' PRECEDING AND CURRENT ROW)
       )                                                                AS "load28d",
       COALESCE(acute_chronic_ratio,
         CASE
-          WHEN AVG(COALESCE(daily_load, 0))
-               OVER (ORDER BY dt ROWS BETWEEN 27 PRECEDING AND CURRENT ROW) > 0
+          WHEN SUM(COALESCE(daily_load, 0))
+               OVER (ORDER BY dt RANGE BETWEEN INTERVAL '27 days' PRECEDING AND CURRENT ROW) > 0
           THEN ROUND(
-            AVG(COALESCE(daily_load, 0))
-              OVER (ORDER BY dt ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)::numeric /
-            AVG(COALESCE(daily_load, 0))
-              OVER (ORDER BY dt ROWS BETWEEN 27 PRECEDING AND CURRENT ROW)::numeric,
+            SUM(COALESCE(daily_load, 0))
+              OVER (ORDER BY dt RANGE BETWEEN INTERVAL '6 days' PRECEDING AND CURRENT ROW)::numeric /
+            (SUM(COALESCE(daily_load, 0))
+              OVER (ORDER BY dt RANGE BETWEEN INTERVAL '27 days' PRECEDING AND CURRENT ROW)::numeric / 4),
             2)
           ELSE NULL
         END

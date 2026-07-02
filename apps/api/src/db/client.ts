@@ -10,4 +10,3 @@ const { DATABASE_URL } = databaseEnv();
 const queryClient = postgres(DATABASE_URL);
 
 export const db = drizzle(queryClient, { schema, casing: "snake_case" });
-export { schema };

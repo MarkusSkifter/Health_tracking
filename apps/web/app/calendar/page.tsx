@@ -5,8 +5,6 @@ import { CalendarGrid } from "../components/CalendarGrid";
 import { LedgerShell } from "../components/ledger/LedgerShell";
 import { intensity, type IntensityKey } from "../components/ledger/shared";
 
-export const revalidate = 60;
-
 type SearchParams = Promise<{ month?: string }>;
 
 function shiftMonth(ym: string, delta: number): string {
@@ -31,11 +29,12 @@ const LEGEND: Array<{ key: IntensityKey; label: string }> = [
 export default async function CalendarPage({ searchParams }: { searchParams: SearchParams }) {
   const { month: mp } = await searchParams;
   const thisMonth = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Copenhagen", year: "numeric", month: "2-digit" }).format(new Date()).slice(0, 7);
-  const month = mp ?? thisMonth;
+  // A malformed ?month= would flow into new Date() and crash Intl formatting.
+  const month = mp && /^\d{4}-(0[1-9]|1[0-2])$/.test(mp) ? mp : thisMonth;
 
   const [y, mo] = month.split("-").map(Number);
-  const year = y ?? new Date().getFullYear();
-  const monthNum = mo ?? (new Date().getMonth() + 1);
+  const year = y!;
+  const monthNum = mo!;
   const from = `${month}-01`;
   const lastDay = new Date(year, monthNum, 0).getDate();
   const to = `${month}-${String(lastDay).padStart(2, "0")}`;

@@ -30,10 +30,6 @@ const anthropicSchema = z.object({
   ANTHROPIC_API_KEY: z.string().min(1),
 });
 
-const serverSchema = z.object({
-  PORT: z.coerce.number().default(3001),
-});
-
 const vapidSchema = z.object({
   VAPID_PUBLIC_KEY: z.string().min(1),
   VAPID_PRIVATE_KEY: z.string().min(1),
@@ -63,13 +59,7 @@ export const intervalsEnv = memoize(() => intervalsSchema.parse(process.env));
 export const databaseEnv = memoize(() => databaseSchema.parse(process.env));
 /** Anthropic / Claude (SPEC §7). */
 export const anthropicEnv = memoize(() => anthropicSchema.parse(process.env));
-/** API server settings. */
-export const serverEnv = memoize(() => serverSchema.parse(process.env));
 /** VAPID keys for Web Push. */
 export const vapidEnv = memoize(() => vapidSchema.parse(process.env));
 /** COROS API credentials. */
 export const corosEnv = memoize(() => corosSchema.parse(process.env));
-
-export type IntervalsEnv = z.infer<typeof intervalsSchema>;
-export type DatabaseEnv = z.infer<typeof databaseSchema>;
-export type AnthropicEnv = z.infer<typeof anthropicSchema>;

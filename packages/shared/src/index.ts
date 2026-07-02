@@ -70,12 +70,6 @@ export interface AnalyticsDay {
   weightKg: number | null;
 }
 
-export interface AnalyticsResponse {
-  days: AnalyticsDay[];
-  from: IsoDate;
-  to: IsoDate;
-}
-
 /** One day in an AI-generated training suggestion. */
 export interface AiDaySuggestion {
   date: IsoDate;
@@ -130,12 +124,6 @@ export interface ActivityStreams {
   altitude?: number[];
   /** Speed, metres per second (from `velocity_smooth`). */
   velocity?: number[];
-}
-
-/** User-configurable training thresholds. */
-export interface UserSettings {
-  ftpWatts: number | null;
-  runThresholdSec: number | null;
 }
 
 /** Athlete self-description and training context. */

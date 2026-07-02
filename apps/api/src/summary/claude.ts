@@ -9,7 +9,7 @@ export async function generateSummaryText(userPrompt: string): Promise<string> {
   const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 
   const message = await client.messages.create({
-    model: SUMMARY_MODEL, // claude-sonnet-4-6
+    model: SUMMARY_MODEL,
     max_tokens: 1024,
     system: SUMMARY_SYSTEM_PROMPT,
     messages: [{ role: "user", content: userPrompt }],

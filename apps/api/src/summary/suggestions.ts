@@ -7,14 +7,9 @@ import { activities, athleteProfiles, dailySummary, trainingGoals, userSettings,
 import { anthropicEnv } from "../env";
 import { ATHLETE_TIMEZONE, isoDateInTimeZone } from "../intervals/dates";
 import { getOrCreateUserId } from "../ingest/store";
+import { addDays } from "../metrics/load";
 
 const PLAN_DAYS = 28; // 4-week rolling block
-
-function addDays(date: string, n: number): string {
-  const d = new Date(`${date}T00:00:00`);
-  d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
-}
 
 function fallbackPlan(today: string, tsb: number, acr: number): AiWeekPlan {
   const dates = Array.from({ length: PLAN_DAYS }, (_, i) => addDays(today, i));
@@ -184,9 +179,16 @@ export async function generateWeekSuggestions(): Promise<AiWeekPlan> {
         .limit(5),
     ]);
 
+    // load7d/load28d are trailing SUMS; normalize to daily averages so
+    // ATL/CTL/TSB land on the conventional TSS-per-day scale the thresholds
+    // below (and the prompt) expect.
+    let atl = 0;
+    let ctl = 0;
     const s = latestRows[0];
     if (s) {
-      tsb = Math.round(s.load7d - s.load28d);
+      atl = s.load7d / 7;
+      ctl = s.load28d / 28;
+      tsb = Math.round(ctl - atl);
       acr = s.acuteChronicRatio;
     }
     const cfg = settingsRows[0];
@@ -263,8 +265,8 @@ export async function generateWeekSuggestions(): Promise<AiWeekPlan> {
       profileSection +
       sportFocusSection(focus, runThresholdSec) +
       (s ? (
-        "Fitness (as of " + s.date + "): CTL=" + Math.round(s.load28d) +
-        " ATL=" + Math.round(s.load7d) +
+        "Fitness (as of " + s.date + "): CTL=" + Math.round(ctl) +
+        " ATL=" + Math.round(atl) +
         " TSB=" + tsb + " (" + state + ")" +
         " ACR=" + s.acuteChronicRatio.toFixed(2) + "\n"
       ) : "") +
